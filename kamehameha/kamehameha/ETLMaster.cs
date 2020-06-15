@@ -15,7 +15,7 @@ namespace kamehameha
 {
     public class ETLMaster
     {
-        public string ConnectionString { get; set; }
+        private string ConnectionString { get; set; }
         public int BatchID { get; set; }
         public string BatchType { get; set; }
         public string CollectionTypes { get; set; }
@@ -32,26 +32,27 @@ namespace kamehameha
             LoadType = 0;
             NewWatermarkValue = DateTime.Now;
             ManualStartDateTime = new DateTime(2020, 12, 31);
+            BatchID = -9;
             DecryptionKey = "fb.com/dobuinguyenhieu";
         }
-        public ETLMaster(string sql_connection_string, string batch_type, string collection_type, string decryption_key,
+        public ETLMaster(string sql_connection_string, string batch_type, string collection_types, string decryption_key,
             DateTime new_watermark_value, int load_type = 0, DateTime? manual_start_datetime = null)
         {
             ConnectionString = sql_connection_string;
             BatchType = batch_type;
-            CollectionTypes = collection_type;
+            CollectionTypes = collection_types;
             LoadType = load_type;
             NewWatermarkValue = new_watermark_value;
             ManualStartDateTime = manual_start_datetime;
-            BatchID = ETL_GetBatchID();
+            BatchID = -9;
             DecryptionKey = decryption_key;
         }
-        public ETLMaster(string sql_connection_string, int batch_id, string batch_type, string collection_type, string decryption_key,
+        public ETLMaster(string sql_connection_string, int batch_id, string batch_type, string collection_types, string decryption_key,
             DateTime new_watermark_value, int load_type = 0, DateTime? manual_start_datetime = null)
         {
             ConnectionString = sql_connection_string;
             BatchType = batch_type;
-            CollectionTypes = collection_type;
+            CollectionTypes = collection_types;
             LoadType = load_type;
             NewWatermarkValue = new_watermark_value;
             ManualStartDateTime = manual_start_datetime;
@@ -96,7 +97,85 @@ namespace kamehameha
             string connection_string = GetConnectionString(database_type, server, database, user, password, driver, port);
             return connection_string;
         }
-        private DataTable ETL_GetListDataPipelines(string collection_type)
+        public bool ETL_CheckBatchIsRunning()
+        {
+            string batch_type = BatchType;
+            string connection_string = ConnectionString;
+            
+            SqlConnection sc = new SqlConnection(connection_string);
+            SqlCommand cmd = new SqlCommand();
+            cmd.Connection = sc;
+            cmd.CommandText = "dbo.etl_check_batch_is_running";
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddRange(new SqlParameter[]
+            {
+                new SqlParameter("@batch_type", batch_type)
+            });
+
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            returnParameter.Direction = ParameterDirection.ReturnValue;
+
+            sc.Open();
+            cmd.ExecuteNonQuery();
+            sc.Close();
+
+            bool is_running = Convert.ToBoolean(returnParameter.Value);
+            return is_running;
+        }
+        public bool ETL_CheckBatchIsFailed()
+        {
+            string connection_string = ConnectionString;
+            int batch_id = BatchID;
+
+            SqlConnection sc = new SqlConnection(connection_string);
+            SqlCommand cmd = new SqlCommand();
+            cmd.Connection = sc;
+            cmd.CommandText = "dbo.etl_check_batch_is_failed";
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddRange(new SqlParameter[]
+            {
+                new SqlParameter("@batch_id", batch_id)
+            });
+
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            returnParameter.Direction = ParameterDirection.ReturnValue;
+
+            sc.Open();
+            cmd.ExecuteNonQuery();
+            sc.Close();
+
+            bool is_failed = Convert.ToBoolean(returnParameter.Value);
+            return is_failed;
+
+        }
+        private void ETL_ChangeWatermarkValueByLoadType(string a_collection_type)
+        {
+            string connection_string = ConnectionString;
+            string batch_type = BatchType;
+            int load_type = LoadType;
+            DateTime? manual_start_date = ManualStartDateTime;
+
+            SqlConnection sc = new SqlConnection(connection_string);
+            SqlCommand cmd = new SqlCommand();
+            cmd.Connection = sc;
+            cmd.CommandText = "dbo.etl_change_watermark_value_by_load_type";
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddRange(new SqlParameter[]
+            {
+                new SqlParameter("@batch_type", batch_type)
+                ,new SqlParameter("@collection_type", a_collection_type)
+                ,new SqlParameter("@load_type", load_type)
+                ,new SqlParameter("@manual_start_date", manual_start_date)
+            });
+
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            returnParameter.Direction = ParameterDirection.ReturnValue;
+
+            sc.Open();
+            cmd.ExecuteNonQuery();
+            sc.Close();
+        }
+        private DataTable ETL_GetListDataPipelines(string a_collection_type)
         {
             string batch_type = BatchType;
             string decryption_key = DecryptionKey;
@@ -109,7 +188,7 @@ namespace kamehameha
             cmd.Parameters.AddRange(new SqlParameter[]
             {
                 new SqlParameter("@batch_type", batch_type)
-                ,new SqlParameter("@collection_type", collection_type)
+                ,new SqlParameter("@collection_type", a_collection_type)
                 ,new SqlParameter("@decryption_key", decryption_key)
             });
             SqlDataAdapter sda = new SqlDataAdapter(cmd);
@@ -121,41 +200,50 @@ namespace kamehameha
 
             return dt;
         }
-        private int ETL_GetBatchID()
+        public int ETL_GetBatchID()
         {
-            string batch_type = BatchType;
-            string collection_type = CollectionTypes;
-            int load_type = LoadType;
-            DateTime new_watermark_value = NewWatermarkValue;
-            string machine_name = Environment.MachineName;
-            string user_name = Environment.UserName;
-            string batch_name = batch_type + " " + new_watermark_value.ToShortDateString() + " " + new_watermark_value.ToLongTimeString();
+            int batch_id = BatchID;
 
-            SqlConnection sc = new SqlConnection(ConnectionString);
-            SqlCommand cmd = new SqlCommand();
-            cmd.Connection = sc;
-            cmd.CommandText = "dbo.etl_get_batch_id";
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddRange(new SqlParameter[]
+            if (BatchID > 0)
             {
+                return BatchID;
+            }
+            else
+            {
+                string batch_type = BatchType;
+                string collection_types = CollectionTypes;
+                int load_type = LoadType;
+                DateTime new_watermark_value = NewWatermarkValue;
+                string machine_name = Environment.MachineName;
+                string user_name = Environment.UserName;
+                string batch_name = batch_type + " " + new_watermark_value.ToShortDateString() + " " + new_watermark_value.ToLongTimeString();
+
+                SqlConnection sc = new SqlConnection(ConnectionString);
+                SqlCommand cmd = new SqlCommand();
+                cmd.Connection = sc;
+                cmd.CommandText = "dbo.etl_get_batch_id";
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddRange(new SqlParameter[]
+                {
                 new SqlParameter("@batch_type", batch_type)
                 ,new SqlParameter("@batch_name", batch_name)
-                ,new SqlParameter("@collection_type", collection_type)
+                ,new SqlParameter("@collection_types", collection_types)
                 ,new SqlParameter("@new_watermark_value", new_watermark_value)
                 ,new SqlParameter("@load_type", load_type)
                 ,new SqlParameter("@machine_name", machine_name)
                 ,new SqlParameter("@user_name", user_name)
-            });
+                });
 
-            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
-            returnParameter.Direction = ParameterDirection.ReturnValue;
+                var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+                returnParameter.Direction = ParameterDirection.ReturnValue;
 
-            sc.Open();
-            cmd.ExecuteNonQuery();
-            sc.Close();
+                sc.Open();
+                cmd.ExecuteNonQuery();
+                sc.Close();
 
-            int batch_id = (int)returnParameter.Value;
-            return batch_id;
+                batch_id = Convert.ToInt32(returnParameter.Value);
+                return batch_id;
+            }
         }
         private int ETL_GetLogID(int watermark_id, DateTime watermark_value)
         {
@@ -182,7 +270,7 @@ namespace kamehameha
             cmd.ExecuteNonQuery();
             sc.Close();
 
-            int log_id = (int)returnParameter.Value;
+            int log_id = Convert.ToInt32(returnParameter.Value);
             return log_id;
         }
         private int ETL_GetFileLogID(int log_id, string file_name, string full_path_input)
@@ -206,7 +294,7 @@ namespace kamehameha
             cmd.ExecuteNonQuery();
             sc.Close();
 
-            int filelog_id = (int)returnParameter.Value;
+            int filelog_id = Convert.ToInt32(returnParameter.Value);
             return filelog_id;
         }
         private void ETL_InsertLogDetail(int connection_id, string connection_type, int watermark_id, int log_id, int? filelog_id, string object_log,
@@ -342,6 +430,31 @@ namespace kamehameha
             sc.Open();
             cmd.ExecuteNonQuery();
             sc.Close();
+        }
+        public string ETL_GetErrorDescription()
+        {
+            int batch_id = BatchID;
+            string connection_string = ConnectionString;
+
+            SqlConnection sc = new SqlConnection(connection_string);
+            SqlCommand cmd = new SqlCommand();
+            cmd.Connection = sc;
+            cmd.CommandText = "dbo.etl_get_error_description";
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddRange(new SqlParameter[]
+            {
+                new SqlParameter("@batch_id", batch_id)
+            });
+
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            returnParameter.Direction = ParameterDirection.ReturnValue;
+
+            sc.Open();
+            cmd.ExecuteNonQuery();
+            sc.Close();
+
+            string error_description = returnParameter.Value.ToString();
+            return error_description;
         }
         public static void SendMailWhenFailed(string EmailFrom, string EmailFromPassword, string SMTPAddress, int PortNumber, string EmailTo,
             string SendMailSubject, string SendMailBody)
@@ -868,7 +981,7 @@ namespace kamehameha
                         flag_name = "Unknown";
                         break;
                 }
-                description = flag_name + " - " + e.Message.ToString() + e.HelpLink;
+                description = flag_name + " - StackTrace:" + e.StackTrace + ". Message: " + e.Message.ToString() + e.HelpLink;
                 string code = e.HResult.ToString();
                 ETL_InsertError(log_id, code, description);
             }
@@ -883,7 +996,7 @@ namespace kamehameha
         {
             // Create variable local
             int log_id = -99;
-            int extract_rows = -1;
+            int extract_rows = 0;
             int before_import_rows = -1;
             int import_rows = -1;
             int after_import_rows = -1;
@@ -1014,14 +1127,14 @@ namespace kamehameha
                         flag_name = "Unknown";
                         break;
                 }
-                description = flag_name + " - " + e.Message.ToString() + e.HelpLink;
+                description = flag_name + " - StackTrace:" + e.StackTrace + ". Message: " + e.Message.ToString() + e.HelpLink;
                 string code = e.HResult.ToString();
                 ETL_InsertError(log_id, code, description);
             }
 
         }
         // Can edit
-        private void ETL_ExecutionDataPipeline(int watermark_id, string collection_type, string source_object, string source_query, int source_connection_id,
+        private void ETL_ExecutionDataPipeline(int watermark_id, string a_collection_type, string source_object, string source_query, int source_connection_id,
             string source_connection_type, string source_database_type, string source_driver, string source_server, string source_database, string source_port,
             string source_user, string source_password, string source_input_directory, string source_archive_directory, string source_part_sheet_name_or_delimited,
             int source_skip_line_number, string watermark_column, DateTime watermark_value, string destination_table, string destination_sp_upsert,
@@ -1032,14 +1145,14 @@ namespace kamehameha
         {
             DateTime new_watermark_value = NewWatermarkValue;
 
-            if (collection_type.ToUpper().Contains("DB"))
+            if (a_collection_type.ToUpper().Contains("DB"))
             {
                 ETL_ExecutionDataPipeline_DB(watermark_id, source_object, source_query, source_connection_id, source_connection_type, source_database_type,
                     source_driver, source_server, source_database, source_port, source_user, source_password, watermark_column, watermark_value, new_watermark_value,
                     destination_table, destination_sp_upsert, destination_table_type, destination_connection_id, destination_connection_type, destination_database_type,
                     destination_driver, destination_server, destination_database, destination_port, destination_user, destination_password);
             }
-            else if (collection_type.ToUpper().Contains("FILE"))
+            else if (a_collection_type.ToUpper().Contains("FILE"))
             {
                 ETL_ExecutionDataPipeline_File(watermark_id, source_object, source_connection_id, source_connection_type, source_database_type, source_input_directory,
                     source_archive_directory, source_part_sheet_name_or_delimited, source_skip_line_number, watermark_value, new_watermark_value,
@@ -1047,7 +1160,7 @@ namespace kamehameha
                     destination_driver, destination_server, destination_database, destination_port, destination_user, destination_password);
             }
         }
-        public void ETL_LoadDataSource2Destination_Parallel(string a_collection_type)
+        private void ETL_ExecutionDataPipelines_Parallel(string a_collection_type)
         {
             // Get list data pipelines
             DataTable dt_list_data_pipelines = ETL_GetListDataPipelines(a_collection_type);
@@ -1110,7 +1223,7 @@ namespace kamehameha
                     destination_driver, destination_server, destination_database, destination_port, destination_user, destination_password);
             });
         }
-        public void ETL_LoadDataSource2Destination_Sequence(string a_collection_type)
+        private void ETL_ExecutionDataPipelines_Sequence(string a_collection_type)
         {
             // Get list data pipelines
             DataTable dt_list_data_pipelines = ETL_GetListDataPipelines(a_collection_type);
@@ -1181,14 +1294,17 @@ namespace kamehameha
             Parallel.ForEach(collection_types, a_collection_type =>
             {
                 a_collection_type = a_collection_type.Trim();
+                
+                // Change watermark_value by load_type with a collection type
+                ETL_ChangeWatermarkValueByLoadType(a_collection_type);
 
                 if (is_parallel)
                 {
-                    ETL_LoadDataSource2Destination_Parallel(a_collection_type);
+                    ETL_ExecutionDataPipelines_Parallel(a_collection_type);
                 }
                 else
                 {
-                    ETL_LoadDataSource2Destination_Sequence(a_collection_type);
+                    ETL_ExecutionDataPipelines_Sequence(a_collection_type);
                 }
             });
         }

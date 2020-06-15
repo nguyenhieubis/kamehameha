@@ -1,0 +1,14 @@
+﻿<?xml version="1.0"?>
+<DTS:ConnectionManager xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:ObjectName="ETLMaster_ADONET"
+  DTS:DTSID="{54305DD6-F316-403D-9DE4-C39A68664360}"
+  DTS:CreationName="ADO.NET:System.Data.SqlClient.SqlConnection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <DTS:ObjectData>
+    <DTS:ConnectionManager
+      DTS:ConnectionString="Data Source=NWVH-AXPRD-SQL1;User ID=softline;Initial Catalog=ETLMaster_DEV;Persist Security Info=True;Application Name=SSIS-kamehameha_SSIS-{54305DD6-F316-403D-9DE4-C39A68664360}NWVH-AXPRD-SQL1.ETLMaster_DEV.softline;">
+      <DTS:Password
+        DTS:Name="Password"
+        Sensitive="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAu3dwPyBSNkqAoc9xyTbahQAAAAACAAAAAAAQZgAAAAEAACAAAADIlJXs62+AtIUwhs6ajndnEIFH0lrcCcfwO7tSDsUmGgAAAAAOgAAAAAIAACAAAAB62H0wx5lfMZnutdVIjiZKeIQHttmhEA7YXRBRmK0qXYAAAADjGJVZyXaocfzlJTWmhA+YiSYmhKlI2tzYFWR7et0m+YwTCCVfc8bAYIGfUtEkm63DbQi+ArgGdJXyFgF03VVrAn8wY8VaZjb2K7hB702/Em7GALK5fv6gpNEmx0ZdrfYB0hICJLkvT/6v12pel/ERad8rtjfi51HVeh6bP6Zav0AAAABjfSGSYC5Q8YF3E3/vRKig9CXt0FyftQPL2Jc4e2Vm4fWNiLH9+ubSuHlQC6WP3GN8CLAfOGY3bO7rScjsGPoN</DTS:Password>
+    </DTS:ConnectionManager>
+  </DTS:ObjectData>
+</DTS:ConnectionManager>
