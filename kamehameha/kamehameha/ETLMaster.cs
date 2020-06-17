@@ -112,7 +112,7 @@ namespace kamehameha
                 new SqlParameter("@batch_type", batch_type)
             });
 
-            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Bit);
             returnParameter.Direction = ParameterDirection.ReturnValue;
 
             sc.Open();
@@ -137,7 +137,7 @@ namespace kamehameha
                 new SqlParameter("@batch_id", batch_id)
             });
 
-            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Bit);
             returnParameter.Direction = ParameterDirection.ReturnValue;
 
             sc.Open();
@@ -435,6 +435,7 @@ namespace kamehameha
         {
             int batch_id = BatchID;
             string connection_string = ConnectionString;
+            string decryption_key = DecryptionKey;
 
             SqlConnection sc = new SqlConnection(connection_string);
             SqlCommand cmd = new SqlCommand();
@@ -444,10 +445,11 @@ namespace kamehameha
             cmd.Parameters.AddRange(new SqlParameter[]
             {
                 new SqlParameter("@batch_id", batch_id)
+                ,new SqlParameter("@decryption_key", decryption_key)
             });
 
-            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
-            returnParameter.Direction = ParameterDirection.ReturnValue;
+            var returnParameter = cmd.Parameters.Add("@error_description", SqlDbType.NVarChar, int.MaxValue);
+            returnParameter.Direction = ParameterDirection.Output;
 
             sc.Open();
             cmd.ExecuteNonQuery();
@@ -704,7 +706,7 @@ namespace kamehameha
                     cmd.CommandText = query;
                     cmd.CommandType = CommandType.Text;
                     cmd.CommandTimeout = 3000;
-
+                    
                     if (watermark_column.Length > 0)
                     {
                         OdbcParameter spmt1 = new OdbcParameter("@WatermarkValue", watermark_value);
@@ -832,12 +834,13 @@ namespace kamehameha
                 connectionstring = "Data Source=" + server;
                 connectionstring += port.Length > 0 ? "," + port : "";
                 connectionstring += ";Initial Catalog=" + database + ";";
-                connectionstring += user.Length > 0 ? ("User Id=" + user + ";Password = " + password + ";") : "Integrated Security=True;";
+                connectionstring += user.Length > 0 ? ("User Id=" + user + ";Password=" + password + ";") : "Integrated Security=True;";
 
                 if (driver.Length > 0)
                 {
-                    connectionstring = "Driver=" + driver + ";Server=" + server + ";Database=" + database + ";UID=" + user + ";PWD=" + password + ";";
+                    connectionstring = "Driver=" + driver + ";Server=" + server + ";Database=" + database + ";";
                     connectionstring += port.Length > 0 ? ("Port=" + port + ";") : "";
+                    connectionstring += user.Length > 0 ? ("UID=" + user + ";PWD=" + password + ";") : "Trusted_Connection=yes;";
                 }
             }
             else if (database_type.ToLower() == "postgresql" || database_type.ToLower() == "postgres")
@@ -981,7 +984,7 @@ namespace kamehameha
                         flag_name = "Unknown";
                         break;
                 }
-                description = flag_name + " - StackTrace:" + e.StackTrace + ". Message: " + e.Message.ToString() + e.HelpLink;
+                description = flag_name + " - StackTrace:" + e.TargetSite.Name + ". Message: " + e.Message.ToString() + e.HelpLink;
                 string code = e.HResult.ToString();
                 ETL_InsertError(log_id, code, description);
             }
@@ -1036,7 +1039,13 @@ namespace kamehameha
                 // Condition directory
                 if (Directory.Exists(source_input_directory))
                 {
-                    var full_path_files = Directory.GetFiles(source_input_directory, source_object, SearchOption.AllDirectories);
+                    // Determine the search_option
+                    var search_option = SearchOption.AllDirectories;
+                    if (source_archive_directory.Contains(source_input_directory))
+                    {
+                        search_option = SearchOption.TopDirectoryOnly;
+                    }
+                    var full_path_files = Directory.GetFiles(source_input_directory, source_object, search_option);
                     // Read sequential list files
                     foreach (var full_path_file in full_path_files)
                     {
@@ -1127,7 +1136,7 @@ namespace kamehameha
                         flag_name = "Unknown";
                         break;
                 }
-                description = flag_name + " - StackTrace:" + e.StackTrace + ". Message: " + e.Message.ToString() + e.HelpLink;
+                description = flag_name + " - StackTrace:" + e.TargetSite.Name + ". Message: " + e.Message.ToString() + e.HelpLink;
                 string code = e.HResult.ToString();
                 ETL_InsertError(log_id, code, description);
             }

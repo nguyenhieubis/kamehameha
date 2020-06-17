@@ -13,12 +13,12 @@ namespace ConsoleApp_TEST_ETLMaster
     {
         static void Main(string[] args)
         {
-            string connection_string_1 = "Server=NWVH-AXPRD-SQL1;Database=ETLMaster_DEV;User Id=softline;Password=Welcome-2020;";
+            string connection_string_1 = "Data Source=localhost;Initial Catalog=ETLMaster;Integrated Security=True;";
             SqlConnection ETLMaster_ADONET = new SqlConnection(connection_string_1);
             ETLMaster_ADONET.Open();
 
             string batch_type = "Source2Staging";
-            string collection_types = "DB";
+            string collection_types = "DB,File";
             int load_type = 0;
             DateTime manual_start_date = DateTime.Now;
             bool is_parallel = true;
