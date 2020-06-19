@@ -1,1 +1,0 @@
-Strong name key (SNK) of kamehameha: nguyenhieubis@gmail.com

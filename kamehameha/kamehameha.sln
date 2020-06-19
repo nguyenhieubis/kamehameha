@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.1000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kamehameha", "kamehameha\kamehameha.csproj", "{8A093C38-83EF-4B75-A9B9-CEBCDEDC03A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kamehameha", "kamehameha\kamehameha.csproj", "{60A9C370-E263-4E1D-BD30-F91A5126C466}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8A093C38-83EF-4B75-A9B9-CEBCDEDC03A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A093C38-83EF-4B75-A9B9-CEBCDEDC03A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8A093C38-83EF-4B75-A9B9-CEBCDEDC03A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8A093C38-83EF-4B75-A9B9-CEBCDEDC03A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60A9C370-E263-4E1D-BD30-F91A5126C466}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60A9C370-E263-4E1D-BD30-F91A5126C466}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60A9C370-E263-4E1D-BD30-F91A5126C466}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60A9C370-E263-4E1D-BD30-F91A5126C466}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {EB4BB6E6-9BC7-4D55-90C8-AE81CA41E57E}
+		SolutionGuid = {9DC09E28-F0E6-439C-97E8-7D49BD4D7F16}
 	EndGlobalSection
 EndGlobal
