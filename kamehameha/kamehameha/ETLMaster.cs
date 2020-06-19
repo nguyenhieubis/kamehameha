@@ -17,6 +17,7 @@ namespace kamehameha
 {
     public class ETLMaster
     {
+        #region Properties & Constructor
         // Private variable
         private string ConnectionString = "Server= localhost; Database= ETLMaster; Integrated Security=True;";
         private int BatchID = -9;
@@ -37,7 +38,6 @@ namespace kamehameha
         public DateTime New_Watermark_Value { get { return NewWatermarkValue; } }
         public int Command_Timeout_Source { get { return CommandTimeoutSource; } set { CommandTimeoutSource = value; } }
         public int Command_Timeout_Destination { get { return CommandTimeoutDestination; } set { CommandTimeoutDestination = value; } }
-        // Begin
         public ETLMaster() { }
         public ETLMaster(string sql_connection_string, string batch_type, string collection_types, string decryption_key,
             DateTime new_watermark_value, int load_type = 0, DateTime? manual_start_datetime = null)
@@ -51,44 +51,24 @@ namespace kamehameha
             //BatchID = -9;
             DecryptionKey = decryption_key;
         }
-        public static string ETL_GetConnectionETLMaster(SqlConnection conn, string decryption_key = "fb.com/dobuinguyenhieu")
+
+        /*
+        public ETLMaster(string sql_connection_string, int batch_id, string batch_type, string collection_types, string decryption_key,
+            DateTime new_watermark_value, int load_type = 0, DateTime? manual_start_datetime = null)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.Connection = conn;
-            cmd.CommandText = "dbo.etl_get_connection_etl_master";
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddRange(new SqlParameter[]
-            {
-                new SqlParameter("@decryption_key", decryption_key)
-            });
-
-            SqlDataAdapter sda = new SqlDataAdapter(cmd);
-            DataTable dt = new DataTable();
-            sda.Fill(dt);
-
-            string connection_type = "";
-            string database_type = "";
-            string driver = "";
-            string server = "";
-            string database = "";
-            string port = "";
-            string user = "";
-            string password = "";
-            foreach (DataRow row in dt.Rows)
-            {
-                connection_type = row["connection_type"].ToString();
-                database_type = row["database_type"].ToString();
-                driver = row["driver"].ToString();
-                server = row["server"].ToString();
-                database = row["database"].ToString();
-                port = row["port"].ToString();
-                user = row["user"].ToString();
-                password = row["password"].ToString();
-            }
-
-            string connection_string = GetConnectionString(database_type, server, database, user, password, driver, port);
-            return connection_string;
+            ConnectionString = sql_connection_string;
+            BatchType = batch_type;
+            CollectionTypes = collection_types;
+            LoadType = load_type;
+            NewWatermarkValue = new_watermark_value;
+            ManualStartDateTime = manual_start_datetime;
+            BatchID = batch_id;
+            DecryptionKey = decryption_key;
         }
+        */
+        #endregion
+
+        #region Interact with ETLMaster database
         public bool ETL_CheckBatchIsRunning()
         {
             string batch_type = BatchType;
@@ -444,8 +424,48 @@ namespace kamehameha
             string error_description = returnParameter.Value.ToString();
             return error_description;
         }
-        public static void SendMailWhenFailed(string EmailFrom, string EmailFromPassword, string SMTPAddress, int PortNumber, string EmailTo,
-            string SendMailSubject, string SendMailBody)
+        #endregion
+
+        #region Static Functions
+        public static string ETL_GetConnectionETLMaster(SqlConnection conn, string decryption_key = "fb.com/dobuinguyenhieu")
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.Connection = conn;
+            cmd.CommandText = "dbo.etl_get_connection_etl_master";
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddRange(new SqlParameter[]
+            {
+                new SqlParameter("@decryption_key", decryption_key)
+            });
+
+            SqlDataAdapter sda = new SqlDataAdapter(cmd);
+            DataTable dt = new DataTable();
+            sda.Fill(dt);
+
+            string connection_type = "";
+            string database_type = "";
+            string driver = "";
+            string server = "";
+            string database = "";
+            string port = "";
+            string user = "";
+            string password = "";
+            foreach (DataRow row in dt.Rows)
+            {
+                connection_type = row["connection_type"].ToString();
+                database_type = row["database_type"].ToString();
+                driver = row["driver"].ToString();
+                server = row["server"].ToString();
+                database = row["database"].ToString();
+                port = row["port"].ToString();
+                user = row["user"].ToString();
+                password = row["password"].ToString();
+            }
+
+            string connection_string = GetConnectionString(database_type, server, database, user, password, driver, port);
+            return connection_string;
+        }
+        public static void SendMailWhenFailed(string EmailFrom, string EmailFromPassword, string SMTPAddress, int PortNumber, string EmailTo, string SendMailSubject, string SendMailBody)
         {
             string[] emails = EmailTo.Split(',');
 
@@ -464,8 +484,7 @@ namespace kamehameha
             client.Credentials = new NetworkCredential(EmailFrom, EmailFromPassword);
             client.Send(mail);
         }
-        public static string GetConnectionString(string database_type, string server, string database, string user, string password,
-            string driver = "", string port = "")
+        public static string GetConnectionString(string database_type, string server, string database, string user, string password, string driver = "", string port = "")
         {
             string connectionstring = "";
 
@@ -512,6 +531,9 @@ namespace kamehameha
 
             return connectionstring;
         }
+        #endregion
+
+        #region Object Functions
         private int SQL_GetNumberRows(string connection_string, string table)
         {
             SqlConnection cnn = new SqlConnection(connection_string);
@@ -588,6 +610,35 @@ namespace kamehameha
             cnn.Close();
 
             return number;
+        }
+        // Move file and return archive full path file
+        private string Move_File(string input_directory, string archive_directory, string full_path_file)
+        {
+            string file_name = Path.GetFileName(full_path_file);
+
+            string input_directory_extend = Path.GetDirectoryName(full_path_file).Length > input_directory.Length ? Path.GetDirectoryName(full_path_file).Substring(input_directory.Length) : "";
+            archive_directory += input_directory_extend;
+            string archive_full_path_file = archive_directory + "\\" + file_name;
+
+            if (File.Exists(archive_full_path_file))
+            {
+                int indexpath = file_name.LastIndexOf('.');
+                string timelog = (DateTime.Now.Year * 10000 + DateTime.Now.Month * 100 + DateTime.Now.Day).ToString();
+                string timelog_2 = (DateTime.Now.Hour * 100 + DateTime.Now.Minute).ToString();
+                timelog_2 = timelog_2.Length == 4 ? timelog_2 : "0" + timelog_2;
+                timelog += "_" + timelog_2;
+                archive_full_path_file = archive_full_path_file + "\\" + file_name.Substring(0, indexpath) + "-" + timelog + file_name.Substring(indexpath);
+            }
+            // Check Directory and create if not exists
+            if (!Directory.Exists(Path.GetDirectoryName(archive_full_path_file)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(archive_full_path_file));
+            }
+
+            // Move file
+            File.Move(full_path_file, archive_full_path_file);
+
+            return archive_full_path_file;
         }
         private DataTable GetDataTable_File(string database_type, string file_full_path, string part_sheet_name_or_delimited, int skip_line_number = 0)
         {
@@ -718,6 +769,47 @@ namespace kamehameha
 
             return dt;
         }
+        private DataTable GetDataTable_DB(string database_type, string server, string database, string user, string password,
+            string driver, string port, string source_object, string source_query, string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
+        {
+            string connection_string = GetConnectionString(database_type, server, database, user, password, driver, port);
+            DataTable dt_data = new DataTable();
+            if (database_type.ToLower() == "sqlserver" || database_type.ToLower() == "sql server")
+            {
+                if (driver.Length > 0)
+                {
+                    dt_data = GetDataTable_DB_ODBC(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                }
+                else
+                {
+                    dt_data = GetDataTable_DB_SQLServer(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                }
+            }
+            else if (database_type.ToLower() == "postgresql" || database_type.ToLower() == "postgres")
+            {
+                if (driver.Length > 0)
+                {
+                    dt_data = GetDataTable_DB_ODBC(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                }
+                else
+                {
+                    //dt_data = GetDataTable_DB_PostgreSQL(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                }
+            }
+            else if (database_type.ToLower() == "mysql")
+            {
+                if (driver.Length > 0)
+                {
+                    dt_data = GetDataTable_DB_ODBC(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                }
+                else
+                {
+                    //dt_data = GetDataTable_DB_MySQL(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                }
+            }
+
+            return dt_data;
+        }
         private DataTable GetDataTable_DB_ODBC(string connection_string, string source_object, string source_query,
             string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
         {
@@ -783,76 +875,63 @@ namespace kamehameha
 
             return dt_data;
         }
-        private DataTable GetDataTable_DB(string database_type, string server, string database, string user, string password,
-            string driver, string port, string source_object, string source_query, string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
+        /*
+        private DataTable GetDataTable_DB_MySQL(string connection_string, string source_object, string source_query,
+            string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
         {
-            string connection_string = GetConnectionString(database_type, server, database, user, password, driver, port);
             DataTable dt_data = new DataTable();
-            if (database_type.ToLower() == "sqlserver" || database_type.ToLower() == "sql server")
+            MySqlConnection conn = new MySqlConnection(connection_string);
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.Connection = conn;
+            cmd.CommandText = source_object.Length > 0 ? source_object : source_query;
+            cmd.CommandType = source_object.Length > 0 ? CommandType.StoredProcedure : CommandType.Text;
+            cmd.CommandTimeout = CommandTimeoutSource;
+
+            if (watermark_column.Length > 0)
             {
-                if (driver.Length > 0)
-                {
-                    dt_data = GetDataTable_DB_ODBC(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
-                }
-                else
-                {
-                    dt_data = GetDataTable_DB_SQLServer(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
-                }
+                MySqlParameter spmt1 = new MySqlParameter("@WatermarkValue", watermark_value);
+                MySqlParameter spmt2 = new MySqlParameter("@NewWatermarkValue", new_watermark_value);
+                cmd.Parameters.AddRange(new MySqlParameter[] { spmt1, spmt2 });
             }
-            else if (database_type.ToLower() == "postgresql" || database_type.ToLower() == "postgres")
-            {
-                if (driver.Length > 0)
-                {
-                    dt_data = GetDataTable_DB_ODBC(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
-                }
-                else
-                {
-                    //dt_data = GetDataTable_DB_PostgreSQL(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
-                }
-            }
-            else if (database_type.ToLower() == "mysql")
-            {
-                if (driver.Length > 0)
-                {
-                    dt_data = GetDataTable_DB_ODBC(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
-                }
-                else
-                {
-                    //dt_data = GetDataTable_DB_MySQL(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
-                }
-            }
+
+            MySqlDataAdapter adp = new MySqlDataAdapter(cmd);
+            // Get data each pipeline
+            conn.Open();
+            adp.Fill(dt_data);
+            conn.Close();
 
             return dt_data;
         }
-        // Move file and return archive full path file
-        private string Move_File(string input_directory, string archive_directory, string full_path_file)
+        private DataTable GetDataTable_DB_PostgreSQL(string connection_string, string source_object, string source_query,
+            string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
         {
-            string file_name = Path.GetFileName(full_path_file);
+            DataTable dt_data = new DataTable();
+            NpgsqlConnection conn = new NpgsqlConnection(connection_string);
+            NpgsqlCommand cmd = new NpgsqlCommand();
+            cmd.Connection = conn;
+            cmd.CommandText = source_object.Length > 0 ? source_object : source_query;
+            cmd.CommandType = source_object.Length > 0 ? CommandType.StoredProcedure : CommandType.Text;
+            cmd.CommandTimeout = CommandTimeoutSource;
 
-            string input_directory_extend = Path.GetDirectoryName(full_path_file).Length > input_directory.Length ? Path.GetDirectoryName(full_path_file).Substring(input_directory.Length) : "";
-            archive_directory += input_directory_extend;
-            string archive_full_path_file = archive_directory + "\\" + file_name;
-
-            if (File.Exists(archive_full_path_file))
+            if (watermark_column.Length > 0)
             {
-                int indexpath = file_name.LastIndexOf('.');
-                string timelog = (DateTime.Now.Year * 10000 + DateTime.Now.Month * 100 + DateTime.Now.Day).ToString();
-                string timelog_2 = (DateTime.Now.Hour * 100 + DateTime.Now.Minute).ToString();
-                timelog_2 = timelog_2.Length == 4 ? timelog_2 : "0" + timelog_2;
-                timelog += "_" + timelog_2;
-                archive_full_path_file = archive_full_path_file + "\\" + file_name.Substring(0, indexpath) + "-" + timelog + file_name.Substring(indexpath);
-            }
-            // Check Directory and create if not exists
-            if (!Directory.Exists(Path.GetDirectoryName(archive_full_path_file)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(archive_full_path_file));
+                NpgsqlParameter spmt1 = new NpgsqlParameter("@WatermarkValue", watermark_value);
+                NpgsqlParameter spmt2 = new NpgsqlParameter("@NewWatermarkValue", new_watermark_value);
+                cmd.Parameters.AddRange(new NpgsqlParameter[] { spmt1, spmt2 });
             }
 
-            // Move file
-            File.Move(full_path_file, archive_full_path_file);
+            NpgsqlDataAdapter adp = new NpgsqlDataAdapter(cmd);
+            // Get data each pipeline
+            conn.Open();
+            adp.Fill(dt_data);
+            conn.Close();
 
-            return archive_full_path_file;
+            return dt_data;
         }
+        */
+        #endregion
+
+        #region Execution Functions
         private void ETL_LoadDataViaSPUpsert(string connection_string, DataTable dt_data, string sp_upsert, string table_type, int log_id, int? filelog_id = null)
         {
             // Import data into destination
@@ -863,7 +942,7 @@ namespace kamehameha
                 command_sp_upsert.Connection = cnn_des;
                 command_sp_upsert.CommandText = sp_upsert;
                 command_sp_upsert.CommandType = CommandType.StoredProcedure;
-                command_sp_upsert.CommandTimeout = 4000;
+                command_sp_upsert.CommandTimeout = Command_Timeout_Destination;
 
                 SqlParameter parameter_sp_upsert = new SqlParameter();
                 parameter_sp_upsert.ParameterName = "@source_table";
@@ -1112,7 +1191,7 @@ namespace kamehameha
             }
 
         }
-        // Can edit
+        // Execution a data pipeline | Can edit
         private void ETL_ExecutionDataPipeline(int watermark_id, string a_collection_type, string source_object, string source_query, int source_connection_id,
             string source_connection_type, string source_database_type, string source_driver, string source_server, string source_database, string source_port,
             string source_user, string source_password, string source_input_directory, string source_archive_directory, string source_part_sheet_name_or_delimited,
@@ -1138,6 +1217,28 @@ namespace kamehameha
                     destination_table, destination_sp_upsert, destination_table_type, destination_connection_id, destination_connection_type, destination_database_type,
                     destination_driver, destination_server, destination_database, destination_port, destination_user, destination_password);
             }
+        }
+        // Execution the data pipelines | Can edit
+        public void ETL_LoadDataSource2Destination(bool is_parallel = true)
+        {
+            string[] collection_types = CollectionTypes.Split(',');
+
+            Parallel.ForEach(collection_types, a_collection_type =>
+            {
+                a_collection_type = a_collection_type.Trim();
+
+                // Change watermark_value by load_type with a collection type
+                ETL_ChangeWatermarkValueByLoadType(a_collection_type);
+
+                if (is_parallel)
+                {
+                    ETL_ExecutionDataPipelines_Parallel(a_collection_type);
+                }
+                else
+                {
+                    ETL_ExecutionDataPipelines_Sequence(a_collection_type);
+                }
+            });
         }
         private void ETL_ExecutionDataPipelines_Parallel(string a_collection_type)
         {
@@ -1265,96 +1366,10 @@ namespace kamehameha
                     destination_driver, destination_server, destination_database, destination_port, destination_user, destination_password);
             }
         }
-        // Can edit
-        public void ETL_LoadDataSource2Destination(bool is_parallel = true)
-        {
-            string[] collection_types = CollectionTypes.Split(',');
+        #endregion
 
-            Parallel.ForEach(collection_types, a_collection_type =>
-            {
-                a_collection_type = a_collection_type.Trim();
-
-                // Change watermark_value by load_type with a collection type
-                ETL_ChangeWatermarkValueByLoadType(a_collection_type);
-
-                if (is_parallel)
-                {
-                    ETL_ExecutionDataPipelines_Parallel(a_collection_type);
-                }
-                else
-                {
-                    ETL_ExecutionDataPipelines_Sequence(a_collection_type);
-                }
-            });
-        }
-
-        #region
-        /*
-        public ETLMaster(string sql_connection_string, int batch_id, string batch_type, string collection_types, string decryption_key,
-            DateTime new_watermark_value, int load_type = 0, DateTime? manual_start_datetime = null)
-        {
-            ConnectionString = sql_connection_string;
-            BatchType = batch_type;
-            CollectionTypes = collection_types;
-            LoadType = load_type;
-            NewWatermarkValue = new_watermark_value;
-            ManualStartDateTime = manual_start_datetime;
-            BatchID = batch_id;
-            DecryptionKey = decryption_key;
-        }
-        private DataTable GetDataTable_DB_MySQL(string connection_string, string source_object, string source_query,
-            string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
-        {
-            DataTable dt_data = new DataTable();
-            MySqlConnection conn = new MySqlConnection(connection_string);
-            MySqlCommand cmd = new MySqlCommand();
-            cmd.Connection = conn;
-            cmd.CommandText = source_object.Length > 0 ? source_object : source_query;
-            cmd.CommandType = source_object.Length > 0 ? CommandType.StoredProcedure : CommandType.Text;
-            cmd.CommandTimeout = CommandTimeoutSource;
-
-            if (watermark_column.Length > 0)
-            {
-                MySqlParameter spmt1 = new MySqlParameter("@WatermarkValue", watermark_value);
-                MySqlParameter spmt2 = new MySqlParameter("@NewWatermarkValue", new_watermark_value);
-                cmd.Parameters.AddRange(new MySqlParameter[] { spmt1, spmt2 });
-            }
-
-            MySqlDataAdapter adp = new MySqlDataAdapter(cmd);
-            // Get data each pipeline
-            conn.Open();
-            adp.Fill(dt_data);
-            conn.Close();
-
-            return dt_data;
-        }
-        private DataTable GetDataTable_DB_PostgreSQL(string connection_string, string source_object, string source_query,
-            string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
-        {
-            DataTable dt_data = new DataTable();
-            NpgsqlConnection conn = new NpgsqlConnection(connection_string);
-            NpgsqlCommand cmd = new NpgsqlCommand();
-            cmd.Connection = conn;
-            cmd.CommandText = source_object.Length > 0 ? source_object : source_query;
-            cmd.CommandType = source_object.Length > 0 ? CommandType.StoredProcedure : CommandType.Text;
-            cmd.CommandTimeout = CommandTimeoutSource;
-
-            if (watermark_column.Length > 0)
-            {
-                NpgsqlParameter spmt1 = new NpgsqlParameter("@WatermarkValue", watermark_value);
-                NpgsqlParameter spmt2 = new NpgsqlParameter("@NewWatermarkValue", new_watermark_value);
-                cmd.Parameters.AddRange(new NpgsqlParameter[] { spmt1, spmt2 });
-            }
-
-            NpgsqlDataAdapter adp = new NpgsqlDataAdapter(cmd);
-            // Get data each pipeline
-            conn.Open();
-            adp.Fill(dt_data);
-            conn.Close();
-
-            return dt_data;
-        }
-        */
+        #region Temporary
+        
         #endregion
     }
 }
