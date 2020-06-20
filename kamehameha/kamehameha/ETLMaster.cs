@@ -1,11 +1,13 @@
-﻿using System;
+﻿//using MongoDB.Bson;
+//using MongoDB.Driver;
+//using MySql.Data.MySqlClient;
+//using Npgsql;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Odbc;
 using System.Data.OleDb;
 using System.Data.SqlClient;
-//using MySql.Data.MySqlClient;
-//using Npgsql;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -807,6 +809,10 @@ namespace kamehameha
                     //dt_data = GetDataTable_DB_MySQL(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
                 }
             }
+            else if (database_type.ToLower() == "mongodb")
+            {
+                //dt_data = GetDataTable_DB_MongoDB(server, database, user, password, driver, port, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+            }
 
             return dt_data;
         }
@@ -876,6 +882,53 @@ namespace kamehameha
             return dt_data;
         }
         /*
+         * private DataTable GetDataTable_DB_MongoDB(string server, string database, string user, string password, string driver, string port, string collection, string col_query,
+            string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
+        {
+            string conn_str = "mongodb://" + user + ":" + password + "@" + server;
+            conn_str += port.Length > 0 ? (":" + port) : "";
+            var myclient = new MongoClient(conn_str);
+            var mydatabase = myclient.GetDatabase(database);
+            var mycollection = mydatabase.GetCollection<BsonDocument>(collection);
+
+            IFindFluent<BsonDocument, BsonDocument> result;
+            if (watermark_column.Length > 0)
+            {
+                var builder = Builders<BsonDocument>.Filter;
+                var query = builder.Gt(watermark_column, watermark_value) & builder.Lte(watermark_column, new_watermark_value);
+                result = mycollection.Find(query);
+            }
+            else
+            {
+                result = mycollection.Find(new BsonDocument());
+            }
+            if (col_query.Replace("{", "").Replace("}", "").Length > 0)
+            {
+                ProjectionDefinition<BsonDocument> projection = col_query;
+                result = result.Project(projection);
+            }
+
+            DataTable dt_data = new DataTable();
+            foreach (var doc in result.ToList())
+            {
+                foreach (var elm in doc.Elements)
+                {
+                    if (!dt_data.Columns.Contains(elm.Name))
+                    {
+                        string column_name = elm.Name.ToLower() == "_id" ? (elm.Name + "_mongodb") : elm.Name;
+                        dt_data.Columns.Add(new DataColumn(column_name));
+                    }
+                }
+                DataRow dr = dt_data.NewRow();
+                foreach (var elm in doc.Elements)
+                {
+                    dr[elm.Name] = elm.Value;
+                }
+                dt_data.Rows.Add(dr);
+            }
+
+            return dt_data;
+        }
         private DataTable GetDataTable_DB_MySQL(string connection_string, string source_object, string source_query,
             string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
         {
@@ -1369,7 +1422,7 @@ namespace kamehameha
         #endregion
 
         #region Temporary
-        
+
         #endregion
     }
 }
