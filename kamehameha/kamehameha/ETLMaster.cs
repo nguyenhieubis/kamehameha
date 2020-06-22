@@ -882,7 +882,7 @@ namespace kamehameha
             return dt_data;
         }
         /*
-         * private DataTable GetDataTable_DB_MongoDB(string server, string database, string user, string password, string driver, string port, string collection, string col_query,
+        private DataTable GetDataTable_DB_MongoDB(string server, string database, string user, string password, string driver, string port, string collection, string col_query,
             string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
         {
             string conn_str = "mongodb://" + user + ":" + password + "@" + server;
