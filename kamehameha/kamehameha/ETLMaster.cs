@@ -811,7 +811,7 @@ namespace kamehameha
             }
             else if (database_type.ToLower() == "mongodb")
             {
-                //dt_data = GetDataTable_DB_MongoDB(server, database, user, password, driver, port, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                dt_data = GetDataTable_DB_MongoDB(server, database, user, password, driver, port, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
             }
 
             return dt_data;
@@ -881,11 +881,12 @@ namespace kamehameha
 
             return dt_data;
         }
+
         /*
         private DataTable GetDataTable_DB_MongoDB(string server, string database, string user, string password, string driver, string port, string collection, string col_query,
             string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
         {
-            string conn_str = "mongodb://" + user + ":" + password + "@" + server;
+            string conn_str = "mongodb://" + Uri.EscapeDataString(user) + ":" + Uri.EscapeDataString(password) + "@" + server;
             conn_str += port.Length > 0 ? (":" + port) : "";
             var myclient = new MongoClient(conn_str);
             var mydatabase = myclient.GetDatabase(database);
@@ -913,16 +914,18 @@ namespace kamehameha
             {
                 foreach (var elm in doc.Elements)
                 {
-                    if (!dt_data.Columns.Contains(elm.Name))
+                    string column_name = elm.Name.ToLower() == "_id" ? (elm.Name + "_mongodb") : elm.Name;
+                    if (!dt_data.Columns.Contains(column_name))
                     {
-                        string column_name = elm.Name.ToLower() == "_id" ? (elm.Name + "_mongodb") : elm.Name;
                         dt_data.Columns.Add(new DataColumn(column_name));
                     }
                 }
                 DataRow dr = dt_data.NewRow();
+                int i = 0;
                 foreach (var elm in doc.Elements)
                 {
-                    dr[elm.Name] = elm.Value;
+                    dr[i] = elm.Value;
+                    i++;
                 }
                 dt_data.Rows.Add(dr);
             }
