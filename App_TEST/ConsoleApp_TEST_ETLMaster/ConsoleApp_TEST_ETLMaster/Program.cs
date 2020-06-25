@@ -18,7 +18,7 @@ namespace ConsoleApp_TEST_ETLMaster
             ETLMaster_ADONET.Open();
 
             string batch_type = "Source2Staging";
-            string collection_types = "File,DB";
+            string collection_types = "DB";
             int load_type = 0;
             DateTime manual_start_date = DateTime.Now;
             bool is_parallel = true;

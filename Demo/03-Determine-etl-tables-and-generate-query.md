@@ -2,40 +2,30 @@ Determine ETL Tables & Generate Query
 =====================================
 
 ## Determine ETL Tables
+- Flat Files
 - ETL Tables of SQLServer
 - ETL Tables of MySql
 - ETL Tables of PostgreSQL
 - ETL Tables of MongoDB
 
+## Flat Files
+- CSV: có 2 structure. Folder [Train_CSV](Train_CSV).
+- Excel: có 1 structure. Folder [Train_Excel](Train_Excel).
 
-ETL Tables of SQLServer
------------------------
-
+## ETL Tables of SQLServer
 ETL tất cả các table trong database AdventureWorks2012
 
-
-ETL Tables of MySql
--------------------
-
+## ETL Tables of MySql
 ETL tất cả các table trong database classicmodels
 
-
-ETL Tables of PostgreSQL
-------------------------
-
+## ETL Tables of PostgreSQL
 ETL tất cả các table trong database dvdrental
 
-
-ETL Tables of MongoDB
----------------------
-
+## ETL Tables of MongoDB
 ETL collection restaurants trong database sample_db(là tên database lúc tạo database source)
-
 
 ## Generate Query
 Xác định lấy dữ liệu incremental/full thì dựa vào 1 column datetime để xác định(VD: ModifiedDate). Nếu không có column datetime thì được xem như là bảng đó full load cho mỗi lần etl, ngược lại nếu có column datetime thì là incremental load. Đối với những table dùng column datetime thì Store Procedure/Function/Query đều có 2 parameters là @WatermarkValue và @NewWatermarkValue.
-
-
 
 Ở SQLServer, MySql có thể tạo Store Procedure/Query. Ở PostgreSQL có thể tạo Function/Query. Ở MongoDB thì cần xác định các field cần lấy.
 
