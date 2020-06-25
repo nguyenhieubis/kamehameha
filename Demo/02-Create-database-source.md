@@ -1,7 +1,7 @@
 Create Database Source
 ======================
 Tạo các database từ các file backup
-* [Các File nằm trong folder Files](Files)
+* [Các file để restore nằm trong folder Files](Files)
 
 ## Nội dung
 - Flat Files
