@@ -181,6 +181,7 @@ namespace kamehameha
                 string batch_type = BatchType;
                 string collection_types = CollectionTypes;
                 int load_type = LoadType;
+                DateTime? manual_start_datetime = ManualStartDateTime;
                 DateTime new_watermark_value = NewWatermarkValue;
                 string machine_name = Environment.MachineName;
                 string user_name = Environment.UserName;
@@ -198,6 +199,7 @@ namespace kamehameha
                 ,new SqlParameter("@collection_types", collection_types)
                 ,new SqlParameter("@new_watermark_value", new_watermark_value)
                 ,new SqlParameter("@load_type", load_type)
+                ,new SqlParameter("@manual_start_datetime", manual_start_datetime)
                 ,new SqlParameter("@machine_name", machine_name)
                 ,new SqlParameter("@user_name", user_name)
                 });
@@ -811,7 +813,7 @@ namespace kamehameha
             }
             else if (database_type.ToLower() == "mongodb")
             {
-                dt_data = GetDataTable_DB_MongoDB(server, database, user, password, driver, port, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                //dt_data = GetDataTable_DB_MongoDB(server, database, user, password, driver, port, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
             }
 
             return dt_data;
@@ -988,7 +990,8 @@ namespace kamehameha
         #endregion
 
         #region Execution Functions
-        private void ETL_LoadDataViaSPUpsert(string connection_string, DataTable dt_data, string sp_upsert, string table_type, int log_id, int? filelog_id = null)
+        private void ETL_LoadDataViaSPUpsert(string connection_string, DataTable dt_data, string sp_upsert, string table_type, int log_id, 
+            int? filelog_id = null, DateTime? new_watermark_value = null)
         {
             // Import data into destination
             if (dt_data.Rows.Count > 0)
@@ -1001,15 +1004,18 @@ namespace kamehameha
                 command_sp_upsert.CommandTimeout = Command_Timeout_Destination;
 
                 SqlParameter parameter_sp_upsert = new SqlParameter();
-                parameter_sp_upsert.ParameterName = "@source_table";
+                parameter_sp_upsert.ParameterName = "@tvp";
                 parameter_sp_upsert.SqlDbType = SqlDbType.Structured;
                 parameter_sp_upsert.Direction = ParameterDirection.Input;
                 parameter_sp_upsert.Value = dt_data;
                 parameter_sp_upsert.TypeName = table_type;
 
                 command_sp_upsert.Parameters.Add(parameter_sp_upsert);
-                command_sp_upsert.Parameters.AddRange(new SqlParameter[] { new SqlParameter("@etl_logid", log_id),
-                                    new SqlParameter("@etl_filelogid", filelog_id)});
+                command_sp_upsert.Parameters.AddRange(new SqlParameter[] {
+                    new SqlParameter("@etl_logid", log_id)
+                    ,new SqlParameter("@etl_filelogid", filelog_id)
+                    ,new SqlParameter("@new_watermark_value", new_watermark_value)
+                });
 
                 cnn_des.Open();
                 command_sp_upsert.ExecuteNonQuery();
@@ -1053,7 +1059,7 @@ namespace kamehameha
                 string destination_connection_string = GetConnectionString(destination_database_type, destination_server, destination_database,
                     destination_user, destination_password, destination_driver, destination_port);
                 before_import_rows = SQL_GetNumberRows(destination_connection_string, destination_table);
-                ETL_LoadDataViaSPUpsert(destination_connection_string, dt_source, destination_sp_upsert, destination_table_type, log_id);
+                ETL_LoadDataViaSPUpsert(destination_connection_string, dt_source, destination_sp_upsert, destination_table_type, log_id, null, new_watermark_value);
                 import_rows = SQL_GetNumberRows(destination_connection_string, destination_table, log_id);
                 after_import_rows = SQL_GetNumberRows(destination_connection_string, destination_table);
                 object_log = destination_sp_upsert;
@@ -1185,7 +1191,7 @@ namespace kamehameha
                         flag = 2;
                         start_datetime = DateTime.Now;
                         before_import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table);
-                        ETL_LoadDataViaSPUpsert(destination_connection_string, dt_source, destination_sp_upsert, destination_table_type, log_id, filelog_id);
+                        ETL_LoadDataViaSPUpsert(destination_connection_string, dt_source, destination_sp_upsert, destination_table_type, log_id, filelog_id, new_watermark_value);
                         import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table, log_id, filelog_id);
                         after_import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table);
                         flag = 0;
@@ -1295,6 +1301,8 @@ namespace kamehameha
                     ETL_ExecutionDataPipelines_Sequence(a_collection_type);
                 }
             });
+            
+            
         }
         private void ETL_ExecutionDataPipelines_Parallel(string a_collection_type)
         {
@@ -1365,8 +1373,8 @@ namespace kamehameha
             DataTable dt_list_data_pipelines = ETL_GetListDataPipelines(a_collection_type);
             // Convert DataTable to List<DataRow>
             List<DataRow> rows = new List<DataRow>();
-            foreach (DataRow item in rows) { rows.Add(item); }
-
+            foreach (DataRow item in dt_list_data_pipelines.Rows) { rows.Add(item); }
+            
             foreach (DataRow row in rows)
             {
                 // Create variable about information data pipelines

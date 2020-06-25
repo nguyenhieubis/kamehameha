@@ -18,7 +18,7 @@ namespace ConsoleApp_TEST_ETLMaster
             ETLMaster_ADONET.Open();
 
             string batch_type = "Source2Staging";
-            string collection_types = "DB,File";
+            string collection_types = "File,DB";
             int load_type = 0;
             DateTime manual_start_date = DateTime.Now;
             bool is_parallel = true;
@@ -29,27 +29,27 @@ namespace ConsoleApp_TEST_ETLMaster
             
             DateTime new_watermark_value = DateTime.Now;
             ETLMaster etl_master = new ETLMaster(connection_string, batch_type, collection_types, decryption_key, new_watermark_value, load_type, manual_start_date);
-            
+
 
             // Check if batch_type is running?
-            //if (!etl_master.ETL_CheckBatchIsRunning())
-            //{
-            //    try
-            //    {
-            //        // Create BatchID
-            //        etl_master.BatchID = etl_master.ETL_GetBatchID();
-            //        etl_master.ETL_LoadDataSource2Destination(is_parallel);
-            //    }
-            //    finally
-            //    {
-            //        etl_master.ETL_UpdateBatchID();
-            //        if (etl_master.ETL_CheckBatchIsFailed())
-            //        {
-            //            string error_description = etl_master.ETL_GetErrorDescription();
-            //            Console.WriteLine(error_description);
-            //        }
-            //    }
-            //}
+            if (!etl_master.ETL_CheckBatchIsRunning())
+            {
+                try
+                {
+                    // Create BatchID
+                    etl_master.ETL_GetBatchID();
+                    etl_master.ETL_LoadDataSource2Destination(is_parallel);
+                }
+                finally
+                {
+                    etl_master.ETL_UpdateBatchID();
+                    if (etl_master.ETL_CheckBatchIsFailed())
+                    {
+                        string error_description = etl_master.ETL_GetErrorDescription();
+                        Console.WriteLine(error_description);
+                    }
+                }
+            }
 
 
             ETLMaster_ADONET.Close();
