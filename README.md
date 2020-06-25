@@ -7,3 +7,4 @@
 - [Determine ETL Tables & Generate Query](Demo/03-Determine-etl-tables-and-generate-query.md)
 - [Create Database Destination](Demo/04-Create-database-destination.md)
 - [Create Database ETLMaster](Demo/05-Create-database-etlmaster.md)
+- [Run ConsoleApp_Demo_kamehameha](Demo/06-Run-consolo-app-demo-kamehameha.md)

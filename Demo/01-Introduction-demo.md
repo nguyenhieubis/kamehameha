@@ -2,8 +2,8 @@ Giới thiệu Demo
 ===============
 
 ## Nội dung
-- Tạo database source
-- Xác định các bảng cần ETL và tạo các câu query
-- Tạo database destination
-- Tạo ETLMaster database
-- Cấu hình và chạy code kamehameha
+- [Create Database Source](02-Create-database-source.md)
+- [Determine ETL Tables & Generate Query](03-Determine-etl-tables-and-generate-query.md)
+- [Create Database Destination](04-Create-database-destination.md)
+- [Create Database ETLMaster](05-Create-database-etlmaster.md)
+- [Run ConsoleApp_Demo_kamehameha](06-Run-consolo-app-demo-kamehameha.md)
