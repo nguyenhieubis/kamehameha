@@ -14,4 +14,5 @@ Mở [folder app_console](app_console) có chứa file (_ConsoleApp_TEST_kameham
   - Nhập "0" thì sẽ là Incremental Load và nó sẽ áp dụng với các data pipeline có column datetime, nếu không có thì là full load. Không nhập (chỉ ấn Enter) thì giá trị default cũng là "0".
   - Nhập "1" thì sẽ là Full Load. Mỗi lần ETL là sẽ lấy tất cả các dữ liệu ở source và merge với destination.
   - Nhập "2" thì sẽ là Manual Load. Ví dụ: thay vì full load thì sẽ load lại dữ liệu từ ngày 2020-06-01. Bản demo này không áp dụng LOAD_TYPE này.
-  
+
+Note: Đối với file Excel cần cài đặt [Driver AccessDatabaseEngine](https://www.microsoft.com/en-us/download/details.aspx?id=13255) để đọc file excel.
