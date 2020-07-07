@@ -615,14 +615,41 @@ namespace kamehameha
 
             return number;
         }
-        // Move file and return archive full path file
-        private string Move_File(string input_directory, string archive_directory, string full_path_file)
+        private string GetErrorDescription(Exception e, int flag)
         {
+            string flag_name, description;
+            switch (flag)
+            {
+                case 0:
+                    flag_name = "ETLMaster";
+                    break;
+                case 1:
+                    flag_name = "Source";
+                    break;
+                case 2:
+                    flag_name = "Destination";
+                    break;
+                case 3:
+                    flag_name = "MoveFile";
+                    break;
+                default:
+                    flag_name = "Unknown";
+                    break;
+            }
+            description = flag_name + " - TargetSite.Name:" + e.TargetSite.Name + ". Message: " + e.Message.ToString() + e.HelpLink;
+
+            return description;
+        }
+        // Move file and return archive full path file
+        private string Move_File(string input_directory, string archive_directory, string full_path_file, bool is_succeeded = true)
+        {
+            string archive_directory_extend = "\\";
+            if (!is_succeeded) { archive_directory_extend = "_ERRORS\\"; }
             string file_name = Path.GetFileName(full_path_file);
 
             string input_directory_extend = Path.GetDirectoryName(full_path_file).Length > input_directory.Length ? Path.GetDirectoryName(full_path_file).Substring(input_directory.Length) : "";
             archive_directory += input_directory_extend;
-            string archive_full_path_file = archive_directory + "\\" + file_name;
+            string archive_full_path_file = archive_directory + archive_directory_extend + file_name;
 
             if (File.Exists(archive_full_path_file))
             {
@@ -631,7 +658,7 @@ namespace kamehameha
                 string timelog_2 = (DateTime.Now.Hour * 100 + DateTime.Now.Minute).ToString();
                 timelog_2 = timelog_2.Length == 4 ? timelog_2 : "0" + timelog_2;
                 timelog += "_" + timelog_2;
-                archive_full_path_file = archive_full_path_file + "\\" + file_name.Substring(0, indexpath) + "-" + timelog + file_name.Substring(indexpath);
+                archive_full_path_file = archive_full_path_file.Replace(file_name,"") + file_name.Substring(0, indexpath) + "¬" + timelog + file_name.Substring(indexpath);
             }
             // Check Directory and create if not exists
             if (!Directory.Exists(Path.GetDirectoryName(archive_full_path_file)))
@@ -1075,29 +1102,13 @@ namespace kamehameha
             }
             catch (Exception e)
             {
-                // Update log_id failed
-                ETL_UpdateLogID(log_id, false, extract_rows, before_import_rows, import_rows, after_import_rows);
-
                 // Insert error
-                string flag_name, description;
-                switch (flag)
-                {
-                    case 0:
-                        flag_name = "ETLMaster";
-                        break;
-                    case 1:
-                        flag_name = "Source";
-                        break;
-                    case 2:
-                        flag_name = "Destination";
-                        break;
-                    default:
-                        flag_name = "Unknown";
-                        break;
-                }
-                description = flag_name + " - TargetSite.Name:" + e.TargetSite.Name + ". Message: " + e.Message.ToString() + e.HelpLink;
+                string description = GetErrorDescription(e, flag);
                 string code = e.HResult.ToString();
                 ETL_InsertError(log_id, code, description);
+
+                // Update log_id failed
+                ETL_UpdateLogID(log_id, false, extract_rows, before_import_rows, import_rows, after_import_rows);
             }
 
         }
@@ -1171,40 +1182,56 @@ namespace kamehameha
                         // Create variable local
                         string file_name = Path.GetFileName(full_path_file);
 
-                        // Get filelog_id
-                        filelog_id = ETL_GetFileLogID(log_id, file_name, full_path_file);
+                        try
+                        {
+                            // Get filelog_id
+                            filelog_id = ETL_GetFileLogID(log_id, file_name, full_path_file);
 
-                        // Get data source from a file
-                        flag = 1;
-                        start_datetime = DateTime.Now;
-                        DataTable dt_source = GetDataTable_File(source_database_type, full_path_file, source_part_sheet_name_or_delimited, source_skip_line_number);
-                        flag = 0;
-                        extract_rows_file = dt_source.Rows.Count;
-                        object_log = source_object.Length > 0 ? source_object : "query_select_" + destination_table;
-                        ETL_InsertLogDetail(source_connection_id, source_connection_type, watermark_id, log_id, filelog_id, object_log, DateTime.Now - start_datetime, extract_rows_file);
+                            // Get data source from a file
+                            flag = 1;
+                            start_datetime = DateTime.Now;
+                            DataTable dt_source = GetDataTable_File(source_database_type, full_path_file, source_part_sheet_name_or_delimited, source_skip_line_number);
+                            flag = 0;
+                            extract_rows_file = dt_source.Rows.Count;
+                            object_log = source_object.Length > 0 ? source_object : "query_select_" + destination_table;
+                            ETL_InsertLogDetail(source_connection_id, source_connection_type, watermark_id, log_id, filelog_id, object_log, DateTime.Now - start_datetime, extract_rows_file);
 
-                        // Set extract_rows of log_id
-                        if (extract_rows < 0) { extract_rows = dt_source.Rows.Count; }
-                        else { extract_rows += extract_rows_file; }
+                            // Set extract_rows of log_id
+                            if (extract_rows < 0) { extract_rows = dt_source.Rows.Count; }
+                            else { extract_rows += extract_rows_file; }
 
-                        // Load data to destination
-                        flag = 2;
-                        start_datetime = DateTime.Now;
-                        before_import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table);
-                        ETL_LoadDataViaSPUpsert(destination_connection_string, dt_source, destination_sp_upsert, destination_table_type, log_id, filelog_id, new_watermark_value);
-                        import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table, log_id, filelog_id);
-                        after_import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table);
-                        flag = 0;
-                        object_log = destination_sp_upsert;
-                        ETL_InsertLogDetail(destination_connection_id, destination_connection_type, watermark_id, log_id, filelog_id, object_log, DateTime.Now - start_datetime,
-                            extract_rows_file, before_import_rows_file, import_rows_file, after_import_rows_file);
+                            // Load data to destination
+                            flag = 2;
+                            start_datetime = DateTime.Now;
+                            before_import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table);
+                            ETL_LoadDataViaSPUpsert(destination_connection_string, dt_source, destination_sp_upsert, destination_table_type, log_id, filelog_id, new_watermark_value);
+                            import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table, log_id, filelog_id);
+                            after_import_rows_file = SQL_GetNumberRows(destination_connection_string, destination_table);
+                            flag = 0;
+                            object_log = destination_sp_upsert;
+                            ETL_InsertLogDetail(destination_connection_id, destination_connection_type, watermark_id, log_id, filelog_id, object_log, DateTime.Now - start_datetime,
+                                extract_rows_file, before_import_rows_file, import_rows_file, after_import_rows_file);
 
-                        // Move file
-                        flag = 3;
-                        full_path_archive = Move_File(source_input_directory, source_archive_directory, full_path_file);
-                        flag = 0;
-                        // Update filelog_id  succeeded
-                        ETL_UpdateFileLogID(filelog_id, true, full_path_archive, extract_rows_file, before_import_rows_file, import_rows_file, after_import_rows_file);
+                            // Move file
+                            flag = 3;
+                            full_path_archive = Move_File(source_input_directory, source_archive_directory, full_path_file);
+                            flag = 0;
+                            // Update filelog_id  succeeded
+                            ETL_UpdateFileLogID(filelog_id, true, full_path_archive, extract_rows_file, before_import_rows_file, import_rows_file, after_import_rows_file);
+                        }
+                        catch (Exception e)
+                        {
+                            // Insert error
+                            string description = GetErrorDescription(e, flag);
+                            string code = e.HResult.ToString();
+                            ETL_InsertError(log_id, code, description, filelog_id);
+
+                            // Move file in folder errors
+                            full_path_archive = Move_File(source_input_directory, source_archive_directory, full_path_file, false);
+
+                            // Update filelog_id failed
+                            ETL_UpdateFileLogID(filelog_id, false, full_path_archive, extract_rows_file, before_import_rows_file, import_rows_file, after_import_rows_file);
+                        }
                     }
                 }
 
@@ -1222,34 +1249,13 @@ namespace kamehameha
             }
             catch (Exception e)
             {
-                // Update filelog_id failed
-                ETL_UpdateFileLogID(filelog_id, false, full_path_archive, extract_rows_file, before_import_rows_file, import_rows_file, after_import_rows_file);
-                // Update log_id failed
-                ETL_UpdateLogID(log_id, false, extract_rows, before_import_rows, import_rows, after_import_rows);
-
                 // Insert error
-                string flag_name, description;
-                switch (flag)
-                {
-                    case 0:
-                        flag_name = "ETLMaster";
-                        break;
-                    case 1:
-                        flag_name = "Source";
-                        break;
-                    case 2:
-                        flag_name = "Destination";
-                        break;
-                    case 3:
-                        flag_name = "MoveFile";
-                        break;
-                    default:
-                        flag_name = "Unknown";
-                        break;
-                }
-                description = flag_name + " - TargetSite.Name:" + e.TargetSite.Name + ". Message: " + e.Message.ToString() + e.HelpLink;
+                string description = GetErrorDescription(e, flag);
                 string code = e.HResult.ToString();
                 ETL_InsertError(log_id, code, description);
+
+                // Update log_id failed
+                ETL_UpdateLogID(log_id, false, extract_rows, before_import_rows, import_rows, after_import_rows);
             }
 
         }

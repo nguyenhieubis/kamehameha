@@ -1,4 +1,4 @@
-/************************* etl_get_connection_etl_master **************************/
+ï»¿/************************* etl_get_connection_etl_master **************************/
 CREATE OR ALTER PROC dbo.etl_get_connection_etl_master @decryption_key NVARCHAR(255)
 AS
 BEGIN
@@ -500,7 +500,12 @@ BEGIN
         FROM dbo.etl_log
         WHERE batch_id = @batch_id;
 
-        SELECT @is_succeeded = IIF(@count_pipeline_log_failed = 0 AND @count_pipeline > 0, 1, 0);
+        SELECT @is_succeeded = IIF(
+                                   @count_pipeline_log_failed = 0
+                                   AND @count_pipeline > 0
+                                   AND NOT EXISTS(SELECT 1 FROM dbo.etl_error WHERE batch_id = @batch_id),
+                                   1,
+                                   0);
 
         UPDATE dbo.etl_batch
         SET is_succeeded = @is_succeeded,
@@ -527,18 +532,18 @@ BEGIN
     SELECT @error_description
         = CONCAT(
                     @error_description,
-                    '» error_id: ',
+                    'Â» error_id: ',
                     CONVERT(NVARCHAR(20), e.error_id),
                     ' | ',
                     'code: ',
                     ISNULL(e.code, 'NULL'),
                     ' | ',
                     '
-	¬ ',
+	Â¬ ',
                     'message: ',
                     e.description,
                     '
-	¬ ',
+	Â¬ ',
                     'watermark_id: ',
                     ISNULL(CONVERT(NVARCHAR(20), l.watermark_id), 'NULL'),
                     ' | ',
@@ -549,7 +554,7 @@ BEGIN
                     IIF(fl.filelog_id IS NOT NULL, CONVERT(NVARCHAR(20), fl.filelog_id), ''),
                     IIF(fl.filelog_id IS NOT NULL, ' | ', ''),
                     '
-	¬ ',
+	Â¬ ',
                     'connection_source: ',
                     ISNULL(CONVERT(NVARCHAR(20), l.source_connection_id), 'NULL'),
                     ' - ',
@@ -565,8 +570,16 @@ BEGIN
                     IIF(fl.filelog_id IS NOT NULL, 'file_name: ', ''),
                     IIF(fl.filelog_id IS NOT NULL, fl.file_name, ''),
                     IIF(fl.filelog_id IS NOT NULL, ' | ', ''),
+					IIF(fl.filelog_id IS NOT NULL, '
+		â¨½ full_path_input: ', ''),
+                    IIF(fl.filelog_id IS NOT NULL, fl.full_path_input, ''),
+                    IIF(fl.filelog_id IS NOT NULL, ' | ', ''),
+					IIF(fl.filelog_id IS NOT NULL, '
+		â¨½ full_path_archive: ', ''),
+                    IIF(fl.filelog_id IS NOT NULL, fl.full_path_archive, ''),
+                    IIF(fl.filelog_id IS NOT NULL, ' | ', ''),
                     '
-	¬ ',
+	Â¬ ',
                     'connection_destination: ',
                     ISNULL(CONVERT(NVARCHAR(20), l.destination_connection_id), 'NULL'),
                     ' - ',
