@@ -768,7 +768,7 @@ namespace kamehameha
                     if (
                         drSheet["TABLE_NAME"].ToString().Contains("$")
                         && !drSheet["TABLE_NAME"].ToString().Contains("FilterDatabase")
-                        && drSheet["TABLE_NAME"].ToString().Contains(part_sheet_name)
+                        && drSheet["TABLE_NAME"].ToString().ToLower().Contains(part_sheet_name.ToLower())
                         )
                     {
                         sheetnames.Add(drSheet["TABLE_NAME"].ToString());
@@ -1128,6 +1128,7 @@ namespace kamehameha
             int flag = 0;
             DateTime start_datetime;
             string object_log;
+            bool is_succeeded = true;
 
             // Create variable local using filelog
             int filelog_id = -999;
@@ -1221,6 +1222,7 @@ namespace kamehameha
                         }
                         catch (Exception e)
                         {
+                            is_succeeded = false;
                             // Insert error
                             string description = GetErrorDescription(e, flag);
                             string code = e.HResult.ToString();
@@ -1244,8 +1246,11 @@ namespace kamehameha
                 // Update watermark_id
                 ETL_UpdateWatermarkID(watermark_id, new_watermark_value);
 
-                // Update log_id succeeded
-                ETL_UpdateLogID(log_id, true, extract_rows, before_import_rows, import_rows, after_import_rows);
+                // Update log_id
+                if (is_succeeded)
+                    ETL_UpdateLogID(log_id, true, extract_rows, before_import_rows, import_rows, after_import_rows);
+                else
+                    ETL_UpdateLogID(log_id, false, extract_rows, before_import_rows, import_rows, after_import_rows);
             }
             catch (Exception e)
             {

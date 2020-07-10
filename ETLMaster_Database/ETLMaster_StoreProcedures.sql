@@ -571,13 +571,11 @@ BEGIN
                     IIF(fl.filelog_id IS NOT NULL, fl.file_name, ''),
                     IIF(fl.filelog_id IS NOT NULL, ' | ', ''),
 					IIF(fl.filelog_id IS NOT NULL, '
-		⨽ full_path_input: ', ''),
+		* full_path_input: ', ''),
                     IIF(fl.filelog_id IS NOT NULL, fl.full_path_input, ''),
-                    IIF(fl.filelog_id IS NOT NULL, ' | ', ''),
 					IIF(fl.filelog_id IS NOT NULL, '
-		⨽ full_path_archive: ', ''),
+		* full_path_archive: ', ''),
                     IIF(fl.filelog_id IS NOT NULL, fl.full_path_archive, ''),
-                    IIF(fl.filelog_id IS NOT NULL, ' | ', ''),
                     '
 	¬ ',
                     'connection_destination: ',
