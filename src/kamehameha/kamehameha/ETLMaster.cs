@@ -31,6 +31,7 @@ namespace kamehameha
         private string DecryptionKey = "fb.com/dobuinguyenhieu";
         private int CommandTimeoutSource = 3000;
         private int CommandTimeoutDestination = 4000;
+        private int ParallelOption_MaxDegreeOfParallelism = Environment.ProcessorCount / 2;
         // Public property
         public int Batch_ID { get { return BatchID; } }
         public string Batch_Type { get { return BatchType; } }
@@ -40,6 +41,7 @@ namespace kamehameha
         public DateTime New_Watermark_Value { get { return NewWatermarkValue; } }
         public int Command_Timeout_Source { get { return CommandTimeoutSource; } set { CommandTimeoutSource = value; } }
         public int Command_Timeout_Destination { get { return CommandTimeoutDestination; } set { CommandTimeoutDestination = value; } }
+        public int Parallel_Option_MaxDegreeOfParallelism { get { return ParallelOption_MaxDegreeOfParallelism; } set { ParallelOption_MaxDegreeOfParallelism = value; } }
         public ETLMaster() { }
         public ETLMaster(string sql_connection_string, string batch_type, string collection_types, string decryption_key,
             DateTime new_watermark_value, int load_type = 0, DateTime? manual_start_datetime = null)
@@ -1323,7 +1325,9 @@ namespace kamehameha
             List<DataRow> rows = new List<DataRow>();
             foreach (DataRow item in dt_list_data_pipelines.Rows) { rows.Add(item); }
 
-            Parallel.ForEach(rows, row =>
+            var options = new ParallelOptions() { MaxDegreeOfParallelism = ParallelOption_MaxDegreeOfParallelism };
+
+            Parallel.ForEach(rows, options, row =>
             {
                 // Create variable about information data pipelines
                 int watermark_id, source_connection_id, source_skip_line_number, destination_connection_id, destination_skip_line_number;
