@@ -1,30 +1,32 @@
 ﻿DROP TABLE IF EXISTS [dbo].[DimDate];
-CREATE TABLE [dbo].[DimDate](
-	[DateKey] [INT] NOT NULL,
-	[Date] [DATE] NOT NULL,
-	[DayNumber] [INT] NOT NULL,
-	[DayLabel] [NVARCHAR](2) NOT NULL,
-	[WeekDay] [NVARCHAR](10) NOT NULL,
-	[ShortWeekDay] [NVARCHAR](3) NOT NULL,
-	[WeekDayVN] [NVARCHAR](20) NOT NULL,
-	[Month] [NVARCHAR](10) NOT NULL,
-	[ShortMonth] [NVARCHAR](3) NOT NULL,
-	[MonthNumber] [INT] NOT NULL,
-	[MonthLabel] [NVARCHAR](20) NOT NULL,
-	[MonthVN] [NVARCHAR](20) NOT NULL,
-	[QuarterNumber] [INT] NOT NULL,
-	[QuarterLabel] [NVARCHAR](1) NOT NULL,
-	[YearNumber] [INT] NOT NULL,
-	[YearLabel] [NVARCHAR](4) NOT NULL,
-	[ISOWeekNumber] [INT] NOT NULL,
-	[LunarDate] [NVARCHAR](10) NULL,
-	[LunarDay] [INT] NULL,
-	[LunarMonth] [INT] NULL,
-	[LunarYear] [INT] NULL,
-	[LunarIsLeapMonth] [BIT] NULL,
-	[LunarIsLeapYear] [BIT] NULL,
- CONSTRAINT [PK_DimDate] PRIMARY KEY CLUSTERED 
-)
+CREATE TABLE [dbo].[DimDate]
+(
+    [DateKey] [INT] NOT NULL,
+    [Date] [DATE] NOT NULL,
+    [DayNumber] [INT] NOT NULL,
+    [DayLabel] [NVARCHAR](2) NOT NULL,
+    [WeekDay] [NVARCHAR](10) NOT NULL,
+    [ShortWeekDay] [NVARCHAR](3) NOT NULL,
+    [WeekDayVN] [NVARCHAR](20) NOT NULL,
+    [Month] [NVARCHAR](10) NOT NULL,
+    [ShortMonth] [NVARCHAR](3) NOT NULL,
+    [MonthNumber] [INT] NOT NULL,
+    [MonthLabel] [NVARCHAR](20) NOT NULL,
+    [MonthVN] [NVARCHAR](20) NOT NULL,
+    [QuarterNumber] [INT] NOT NULL,
+    [QuarterLabel] [NVARCHAR](1) NOT NULL,
+    [YearNumber] [INT] NOT NULL,
+    [YearLabel] [NVARCHAR](4) NOT NULL,
+    [ISOWeekNumber] [INT] NOT NULL,
+    [LunarDate] [NVARCHAR](10) NULL,
+    [LunarDay] [INT] NULL,
+    [LunarMonth] [INT] NULL,
+    [LunarYear] [INT] NULL,
+    [LunarIsLeapMonth] [BIT] NULL,
+    [LunarIsLeapYear] [BIT] NULL,
+    CONSTRAINT [PK_DimDate]
+        PRIMARY KEY CLUSTERED (DateKey)
+);
 GO
 --===================================================================
 CREATE OR ALTER FUNCTION [dbo].[GenerateDateDimensionColumns]
@@ -141,4 +143,106 @@ BEGIN
     RETURN 0;
 END;
 GO
+DROP TYPE IF EXISTS [dbo].[type_DimDate];
+CREATE TYPE [dbo].[type_DimDate] AS TABLE
+(
+    [DateKey] [INT] NOT NULL,
+    [Date] [DATE] NOT NULL,
+    [DayNumber] [INT] NOT NULL,
+    [DayLabel] [NVARCHAR](2) NOT NULL,
+    [WeekDay] [NVARCHAR](10) NOT NULL,
+    [ShortWeekDay] [NVARCHAR](3) NOT NULL,
+    [WeekDayVN] [NVARCHAR](20) NOT NULL,
+    [Month] [NVARCHAR](10) NOT NULL,
+    [ShortMonth] [NVARCHAR](3) NOT NULL,
+    [MonthNumber] [INT] NOT NULL,
+    [MonthLabel] [NVARCHAR](20) NOT NULL,
+    [MonthVN] [NVARCHAR](20) NOT NULL,
+    [QuarterNumber] [INT] NOT NULL,
+    [QuarterLabel] [NVARCHAR](1) NOT NULL,
+    [YearNumber] [INT] NOT NULL,
+    [YearLabel] [NVARCHAR](4) NOT NULL,
+    [ISOWeekNumber] [INT] NOT NULL,
+    [LunarDate] [NVARCHAR](10) NULL,
+    [LunarDay] [INT] NULL,
+    [LunarMonth] [INT] NULL,
+    [LunarYear] [INT] NULL,
+    [LunarIsLeapMonth] [BIT] NULL,
+    [LunarIsLeapYear] [BIT] NULL
+);
+GO
+CREATE OR ALTER PROC [dbo].[usp_upsert_Lunar_DimDate] @tvp type_DimDate READONLY
+AS
+BEGIN
+    SET NOCOUNT ON;
 
+    MERGE dbo.DimDate AS target
+    USING
+    (
+        SELECT DateKey,
+               Date,
+               DayNumber,
+               DayLabel,
+               WeekDay,
+               ShortWeekDay,
+               WeekDayVN,
+               Month,
+               ShortMonth,
+               MonthNumber,
+               MonthLabel,
+               MonthVN,
+               QuarterNumber,
+               QuarterLabel,
+               YearNumber,
+               YearLabel,
+               ISOWeekNumber,
+               LunarDate,
+               LunarDay,
+               LunarMonth,
+               LunarYear,
+               LunarIsLeapMonth,
+               LunarIsLeapYear
+        FROM @tvp
+    ) AS source
+    ON target.DateKey = source.DateKey
+    WHEN MATCHED THEN
+        UPDATE SET target.LunarDate = source.LunarDate,
+                   target.LunarDay = source.LunarDay,
+                   target.LunarMonth = source.LunarMonth,
+                   target.LunarYear = source.LunarYear,
+                   target.LunarIsLeapMonth = source.LunarIsLeapMonth,
+                   target.LunarIsLeapYear = source.LunarIsLeapYear
+    WHEN NOT MATCHED THEN
+        INSERT
+        (
+            DateKey,
+            Date,
+            DayNumber,
+            DayLabel,
+            WeekDay,
+            ShortWeekDay,
+            WeekDayVN,
+            Month,
+            ShortMonth,
+            MonthNumber,
+            MonthLabel,
+            MonthVN,
+            QuarterNumber,
+            QuarterLabel,
+            YearNumber,
+            YearLabel,
+            ISOWeekNumber,
+            LunarDate,
+            LunarDay,
+            LunarMonth,
+            LunarYear,
+            LunarIsLeapMonth,
+            LunarIsLeapYear
+        )
+        VALUES
+        (source.DateKey, source.Date, source.DayNumber, source.DayLabel, source.WeekDay, source.ShortWeekDay,
+         source.WeekDayVN, source.Month, source.ShortMonth, source.MonthNumber, source.MonthLabel, source.MonthVN,
+         source.QuarterNumber, source.QuarterLabel, source.YearNumber, source.YearLabel, source.ISOWeekNumber,
+         source.LunarDate, source.LunarDay, source.LunarMonth, source.LunarYear, source.LunarIsLeapMonth,
+         source.LunarIsLeapYear);
+END;
