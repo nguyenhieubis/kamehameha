@@ -774,7 +774,7 @@ namespace kamehameha
                                 {
                                     row_value = rowValues[k].ToString();
                                 }
-                                dr[k] = row_value.Trim();
+                                dr[k] = row_value.Trim().Length == 0 ? null : row_value.Trim();
                             }
                             dtCsv.Rows.Add(dr); //add other rows
                         }
