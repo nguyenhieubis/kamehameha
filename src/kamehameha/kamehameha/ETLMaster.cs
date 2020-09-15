@@ -537,37 +537,6 @@ namespace kamehameha
 
             return connectionstring;
         }
-        public static List<string> StringSplit_Custom(string text, char delimited = ',')
-        {
-            string[] rowValues = text.Split(delimited);
-
-            List<string> rows = new List<string>();
-            List<char> s_rows = new List<char>();
-            string item_temp = "";
-            foreach (string item in rowValues)
-            {
-                if (item.Length > 0)
-                {
-                    if (item[0] == '"')
-                    {
-                        s_rows.Add('"');
-                    }
-                    if (item[item.Length - 1] == '"')
-                    {
-                        s_rows.Add('"');
-                    }
-                }
-                item_temp += delimited + item.Replace("\"", "");
-                if (s_rows.Count() % 2 == 0)
-                {
-                    rows.Add(item_temp.Substring(1));
-                    s_rows.Clear();
-                    item_temp = "";
-                }
-            }
-
-            return rows;
-        }
         #endregion
 
         #region Object Functions
