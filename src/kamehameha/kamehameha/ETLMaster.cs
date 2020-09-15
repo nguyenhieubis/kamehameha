@@ -537,6 +537,37 @@ namespace kamehameha
 
             return connectionstring;
         }
+        public static List<string> StringSplit_Custom(string text, char delimited = ',')
+        {
+            string[] rowValues = text.Split(delimited);
+
+            List<string> rows = new List<string>();
+            List<char> s_rows = new List<char>();
+            string item_temp = "";
+            foreach (string item in rowValues)
+            {
+                if (item.Length > 0)
+                {
+                    if (item[0] == '"')
+                    {
+                        s_rows.Add('"');
+                    }
+                    if (item[item.Length - 1] == '"')
+                    {
+                        s_rows.Add('"');
+                    }
+                }
+                item_temp += delimited + item.Replace("\"", "");
+                if (s_rows.Count() % 2 == 0)
+                {
+                    rows.Add(item_temp.Substring(1));
+                    s_rows.Clear();
+                    item_temp = "";
+                }
+            }
+
+            return rows;
+        }
         #endregion
 
         #region Object Functions
@@ -697,17 +728,52 @@ namespace kamehameha
         }
         private DataTable ConvertCSV2DataTable(string file_full_path, char delimited = ',', int skip_line_number = 0)
         {
+            char special_char = '"';
             DataTable dtCsv = new DataTable();
             using (StreamReader sr = new StreamReader(file_full_path))
             {
                 int column_number = 0;
                 long i = 0;
+
+                List<string> rowValues = new List<string>();
+                List<char> s_rows = new List<char>();
+                string item_temp = "";
                 // begin while
                 while (!sr.EndOfStream)
                 {
                     string line_text = sr.ReadLine();
                     if (line_text.Length <= 0) { i++; continue; }
-                    string[] rowValues = line_text.Split(delimited); //split each row with comma to get individual values  
+
+                    string[] values = line_text.Split(delimited);
+
+                    int flag = 0;
+                    foreach (string item in values)
+                    {
+                        string item_trim = item.Trim();
+                        if (item_trim.Length > 0)
+                        {
+                            if (item_trim[0] == special_char)
+                            {
+                                s_rows.Add(special_char);
+                            }
+                            if (item_trim[item_trim.Length - 1] == special_char && item_trim.Length > 1)
+                            {
+                                s_rows.Add(special_char);
+                            }
+                        }
+                        item_temp += item_trim.Replace(special_char.ToString(), "");
+                        item_temp += s_rows.Count() % 2 != 0 ? (flag == values.Count() - 1 ? "\n" : delimited.ToString()) : "";
+                        if (s_rows.Count() % 2 == 0)
+                        {
+                            rowValues.Add(item_temp);
+                            s_rows.Clear();
+                            item_temp = "";
+                        }
+                        flag++;
+                    }
+
+                    if (flag == values.Count() && s_rows.Count() % 2 != 0) continue;
+
                     if (i >= skip_line_number)
                     {
                         if (i == skip_line_number)
@@ -745,6 +811,7 @@ namespace kamehameha
                         }
                     }
                     i++;
+                    rowValues.Clear();
                 }
                 // end while
             }
