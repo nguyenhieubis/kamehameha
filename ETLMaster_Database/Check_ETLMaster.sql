@@ -28,8 +28,6 @@ SELECT datediff(second,created_datetime,completed_datetime),* FROM dbo.etl_batch
 
 GO
 
-
 go
-
 
 

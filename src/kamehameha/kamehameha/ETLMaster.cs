@@ -2,6 +2,7 @@
 //using MongoDB.Driver;
 //using MySql.Data.MySqlClient;
 //using Npgsql;
+using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -533,6 +534,14 @@ namespace kamehameha
                     connectionstring += port.Length > 0 ? ("Port=" + port + ";") : "";
                     connectionstring += user.Length > 0 ? ("User Id=" + user + ";Password=" + password + ";") : "Integrated Security=True;";
                 }
+                else if (database_type.ToLower() == "oracle")
+                {
+                    if (port.Length > 0 && !server.ToLower().Contains("description"))
+                        connectionstring = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=" + server + ")(PORT=" + port + ")));";
+                    else
+                        connectionstring = "Data Source=" + server + ";";
+                    connectionstring += user.Length > 0 ? ("User Id=" + user + ";Password=" + password + ";") : "User Id=/;";
+                }
             }
 
             return connectionstring;
@@ -876,6 +885,17 @@ namespace kamehameha
                     //dt_data = GetDataTable_DB_MySQL(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
                 }
             }
+            else if (database_type.ToLower() == "oracle")
+            {
+                if (driver.Length > 0)
+                {
+                    dt_data = GetDataTable_DB_ODBC(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                }
+                else
+                {
+                    dt_data = GetDataTable_DB_Oracle(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                }
+            }
             else if (database_type.ToLower() == "mongodb")
             {
                 //dt_data = GetDataTable_DB_MongoDB(server, database, user, password, driver, port, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
@@ -1052,6 +1072,32 @@ namespace kamehameha
             return dt_data;
         }
         */
+        private DataTable GetDataTable_DB_Oracle(string connection_string, string source_object, string source_query,
+            string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
+        {
+            DataTable dt_data = new DataTable();
+            OracleConnection conn = new OracleConnection(connection_string);
+            OracleCommand cmd = new OracleCommand();
+            cmd.Connection = conn;
+            cmd.CommandText = source_object.Length > 0 ? source_object : source_query;
+            cmd.CommandType = source_object.Length > 0 ? CommandType.StoredProcedure : CommandType.Text;
+            cmd.CommandTimeout = CommandTimeoutSource;
+
+            if (watermark_column.Length > 0)
+            {
+                OracleParameter spmt1 = new OracleParameter("WatermarkValue", watermark_value);
+                OracleParameter spmt2 = new OracleParameter("NewWatermarkValue", new_watermark_value);
+                cmd.Parameters.AddRange(new OracleParameter[] { spmt1, spmt2 });
+            }
+
+            OracleDataAdapter adp = new OracleDataAdapter(cmd);
+            // Get data each pipeline
+            conn.Open();
+            adp.Fill(dt_data);
+            conn.Close();
+
+            return dt_data;
+        }
         #endregion
 
         #region Execution Functions

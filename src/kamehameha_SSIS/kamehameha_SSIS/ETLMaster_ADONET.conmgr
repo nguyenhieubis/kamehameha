@@ -5,6 +5,10 @@
   DTS:CreationName="ADO.NET:System.Data.SqlClient.SqlConnection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
   <DTS:ObjectData>
     <DTS:ConnectionManager
-      DTS:ConnectionString="Data Source=localhost;Initial Catalog=ETLMaster;Integrated Security=True;Application Name=SSIS-kamehameha_SSIS-{54305DD6-F316-403D-9DE4-C39A68664360}NWVH-AXPRD-SQL1.ETLMaster_DEV.softline;" />
+      DTS:ConnectionString="Data Source=datatyksql.database.windows.net;User ID=Datatyk;Initial Catalog=easycredit;Persist Security Info=True;Application Name=SSIS-kamehameha_SSIS-{54305DD6-F316-403D-9DE4-C39A68664360}NWVH-AXPRD-SQL1.ETLMaster_DEV.softline;">
+      <DTS:Password
+        DTS:Name="Password"
+        Sensitive="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAvbLkq8FMd0Kk1tw4/C47oAAAAAACAAAAAAAQZgAAAAEAACAAAADK35RdJ+CVwFIsii2vtWzofVDtUVTaHjOJBqYLFLwdtQAAAAAOgAAAAAIAACAAAACNL9XuxAgfquvXZ46mpPlzGGXrKp4edt1i8MGkpXxGNYAAAACUVbRrGC30jicqAmeg5shUKcdd+V61/VdNkEFCqkGrcaqYPurme1Oe2jdoAm2BFNBHZ4wc8Je8JlBL1PWKgBqG9FReoIJLqo6viIUcs/MV59NfMHGZqGRmT2oOLIEx+qEhtNCmSHSQmkKfJVmTELmxW8GNDuZ0vJe9ZfrYeJkXykAAAAAG8VhmTBeYMW8TK6J4FLcqj4yFXJQ+/53dbAa/NbeFY8tAaalD3OOROZk3xZtlznUJaT8xIrj0I+xzV9J5a6FD</DTS:Password>
+    </DTS:ConnectionManager>
   </DTS:ObjectData>
 </DTS:ConnectionManager>
