@@ -962,7 +962,10 @@ VALUES '''
         result += '\'' + batch_type + '\', '
         result += '\'' + collection_type + '\', '
         result += 'NULL, ' if str(source_connection_id) in list_na else str(source_connection_id) + ', '
-        result += '\'' + source_object + '\', ' if source_sp_select in list_na else '\'' + source_sp_select + '\', '
+        if source_query not in list_na and len(source_query)>0:
+            result += 'NULL, '
+        else:
+            result += '\'' + source_object + '\', ' if source_sp_select in list_na else '\'' + source_sp_select + '\', '
         result += '@querystr, '
         result += 'NULL, ' if watermark_column in list_na else '\'' + watermark_column + '\', '
         result += '\n'
@@ -1025,11 +1028,11 @@ for cn_id in mappingtable['destination_connection_id'].unique():
         list_id = info_mappingtable['mapping_table_id'].unique()
         
         info_mappingtable_v2 = ufn_distinct_column(info_mappingtable[['destination_table','scds',
-                                                                      'is_overwrite','connection_type']],0)
+                                                                      'is_overwrite','collection_type']],0)
         
         is_overwrite = info_mappingtable_v2['is_overwrite'][0]
         scds = info_mappingtable_v2['scds'][0]
-        connection_type = info_mappingtable_v2['connection_type'][0]
+        collection_type = info_mappingtable_v2['collection_type'][0]
         
         condition = columnsmapping['mapping_table_id'].isin(list_id)
         
@@ -1053,7 +1056,7 @@ for cn_id in mappingtable['destination_connection_id'].unique():
         dic_contents[key_dic_des] += '' if is_overwrite == 1 else '/*\n'
         
         # generate TABLE
-        dic_contents[key_dic_des] += generate_table(col_table, tb_name, scds, connection_type) +'\n'
+        dic_contents[key_dic_des] += generate_table(col_table, tb_name, scds, collection_type) +'\n'
 
         # generate INDEX
         dic_contents[key_dic_des] += generate_index(col_index, tb_name) +'\n'
@@ -1173,7 +1176,7 @@ for i, x in mappingtable.iterrows():
     
     ### get QUERY SOURCE
     if object_source not in list_na:
-        if object_type.upper() in ['TABLE','VIEW'] and enable_generate_sp_select_source == 1 :
+        if object_type.upper() in ['TABLE','VIEW'] and enable_generate_sp_select_source != 1 :
             querySource = get_query_select_src(col_mapping, object_source, watermark_column, 
                                                db_name_src.loc[0,'database_type'])
             mappingtable.loc[i,'source_query'] = querySource
