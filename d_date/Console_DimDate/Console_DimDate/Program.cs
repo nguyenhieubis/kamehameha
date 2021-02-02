@@ -15,14 +15,14 @@ namespace Console_DimDate
         {
             // Server=myServerAddress;Database=myDataBase;Trusted_Connection=True;
             // Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword;
-            string Connection_String = "Server=localhost;Database=Dev_DW;Trusted_Connection=True;";
+            string Connection_String = "Server=fesv-dbsrv.database.windows.net;Database=fesv_dw;User Id=fesv_admin;Password=P@ssw0rd_2020;";
 
             SqlConnection conn = new SqlConnection(Connection_String);
             conn.Open();
 
             // Create data DimDate
-            int start_year = 2015;
-            int end_year = 2050;
+            int start_year = 2020;
+            int end_year = 2049;
             for (int i = start_year; i <= end_year; i++)
             {
                 SqlCommand cmd = new SqlCommand();
@@ -36,7 +36,7 @@ namespace Console_DimDate
                 cmd.ExecuteNonQuery();
             }
 
-            string query = "SELECT * FROM DimDate WHERE LunarDate IS NULL";
+            string query = "SELECT * FROM d_date WHERE LunarDate IS NULL";
             SqlCommand cmd_DimDate = new SqlCommand(query, conn);
 
             DataTable dt_DimDate = new DataTable();
@@ -69,7 +69,7 @@ namespace Console_DimDate
             SqlCommand cmd_upsert = new SqlCommand();
             cmd_upsert.Connection = conn;
             cmd_upsert.CommandType = CommandType.StoredProcedure;
-            cmd_upsert.CommandText = "usp_upsert_Lunar_DimDate";
+            cmd_upsert.CommandText = "usp_upsert_lunar_d_date";
             cmd_upsert.CommandTimeout = 300;
             cmd_upsert.Parameters.Add(new SqlParameter("@tvp", dt_DimDate));
 

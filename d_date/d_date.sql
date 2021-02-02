@@ -1,5 +1,5 @@
-﻿DROP TABLE IF EXISTS [dbo].[DimDate];
-CREATE TABLE [dbo].[DimDate]
+﻿DROP TABLE IF EXISTS [dbo].[d_date];
+CREATE TABLE [dbo].[d_date]
 (
     [DateKey] [INT] NOT NULL,
     [Date] [DATE] NOT NULL,
@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[DimDate]
     [ShortMonth] [NVARCHAR](3) NOT NULL,
     [MonthNumber] [INT] NOT NULL,
     [MonthLabel] [NVARCHAR](20) NOT NULL,
+	[MonthID] INT,
     [MonthVN] [NVARCHAR](20) NOT NULL,
     [QuarterNumber] [INT] NOT NULL,
     [QuarterLabel] [NVARCHAR](1) NOT NULL,
@@ -24,9 +25,38 @@ CREATE TABLE [dbo].[DimDate]
     [LunarYear] [INT] NULL,
     [LunarIsLeapMonth] [BIT] NULL,
     [LunarIsLeapYear] [BIT] NULL,
-    CONSTRAINT [PK_DimDate]
+    CONSTRAINT [PK_d_date]
         PRIMARY KEY CLUSTERED (DateKey)
 );
+GO
+CREATE OR ALTER VIEW v_d_date
+AS
+SELECT DateKey,
+       Date,
+       DayNumber,
+       DayLabel,
+       WeekDay,
+       ShortWeekDay,
+       WeekDayVN,
+       Month,
+       ShortMonth,
+       MonthNumber,
+       MonthLabel,
+	   [MonthID],
+       MonthVN,
+       QuarterNumber,
+       QuarterLabel,
+       YearNumber,
+       YearLabel,
+       ISOWeekNumber,
+       LunarDate,
+       LunarDay,
+       LunarMonth,
+       LunarYear,
+       LunarIsLeapMonth,
+       LunarIsLeapYear
+FROM dbo.d_date (NOLOCK)
+WHERE YearNumber <= YEAR(GETDATE())
 GO
 --===================================================================
 CREATE OR ALTER FUNCTION [dbo].[GenerateDateDimensionColumns]
@@ -63,6 +93,7 @@ RETURN SELECT YEAR(@Date) * 10000 + MONTH(@Date) * 100 + DAY(@Date) AS DateKey,
               CAST(SUBSTRING(DATENAME(MONTH, @Date), 1, 3) AS NVARCHAR(3)) AS [ShortMonth],
               MONTH(@Date) AS [MonthNumber],
               CAST(CAST(YEAR(@Date) AS NVARCHAR(4)) + N'-' + SUBSTRING(DATENAME(MONTH, @Date), 1, 3) AS NVARCHAR(10)) AS [MonthLabel],
+			  YEAR(@Date)*100 + MONTH(@Date) AS [MonthID],
               CONCAT(N'Tháng ', CAST(MONTH(@Date) AS NVARCHAR(2))) AS MonthVN,
               DATENAME(QUARTER, @Date) AS QuarterNumber,
               CAST(DATENAME(QUARTER, @Date) AS NVARCHAR(1)) AS QuarterLabel,
@@ -86,9 +117,9 @@ BEGIN
 
         WHILE YEAR(@DateCounter) = @YearNumber
         BEGIN
-            IF NOT EXISTS (SELECT 1 FROM dbo.DimDate WHERE [Date] = @DateCounter)
+            IF NOT EXISTS (SELECT 1 FROM dbo.d_date WHERE [Date] = @DateCounter)
             BEGIN
-                INSERT dbo.DimDate
+                INSERT dbo.d_date
                 (
                     DateKey,
                     Date,
@@ -101,6 +132,7 @@ BEGIN
                     ShortMonth,
                     MonthNumber,
                     MonthLabel,
+					[MonthID],
                     MonthVN,
                     QuarterNumber,
                     QuarterLabel,
@@ -119,6 +151,7 @@ BEGIN
                        ShortMonth,
                        MonthNumber,
                        MonthLabel,
+					   [MonthID],
                        MonthVN,
                        QuarterNumber,
                        QuarterLabel,
@@ -143,8 +176,9 @@ BEGIN
     RETURN 0;
 END;
 GO
-DROP TYPE IF EXISTS [dbo].[type_DimDate];
-CREATE TYPE [dbo].[type_DimDate] AS TABLE
+DROP PROC IF EXISTS [usp_upsert_lunar_d_date];
+DROP TYPE IF EXISTS [dbo].[type_d_date];
+CREATE TYPE [dbo].[type_d_date] AS TABLE
 (
     [DateKey] [INT] NOT NULL,
     [Date] [DATE] NOT NULL,
@@ -157,6 +191,7 @@ CREATE TYPE [dbo].[type_DimDate] AS TABLE
     [ShortMonth] [NVARCHAR](3) NOT NULL,
     [MonthNumber] [INT] NOT NULL,
     [MonthLabel] [NVARCHAR](20) NOT NULL,
+	[MonthID] INT,
     [MonthVN] [NVARCHAR](20) NOT NULL,
     [QuarterNumber] [INT] NOT NULL,
     [QuarterLabel] [NVARCHAR](1) NOT NULL,
@@ -171,12 +206,12 @@ CREATE TYPE [dbo].[type_DimDate] AS TABLE
     [LunarIsLeapYear] [BIT] NULL
 );
 GO
-CREATE OR ALTER PROC [dbo].[usp_upsert_Lunar_DimDate] @tvp type_DimDate READONLY
+CREATE OR ALTER PROC [dbo].[usp_upsert_lunar_d_date] @tvp type_d_date READONLY
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    MERGE dbo.DimDate AS target
+    MERGE dbo.d_date AS target
     USING
     (
         SELECT DateKey,
@@ -190,6 +225,7 @@ BEGIN
                ShortMonth,
                MonthNumber,
                MonthLabel,
+			   [MonthID],
                MonthVN,
                QuarterNumber,
                QuarterLabel,
@@ -226,6 +262,7 @@ BEGIN
             ShortMonth,
             MonthNumber,
             MonthLabel,
+			[MonthID],
             MonthVN,
             QuarterNumber,
             QuarterLabel,
@@ -241,7 +278,7 @@ BEGIN
         )
         VALUES
         (source.DateKey, source.Date, source.DayNumber, source.DayLabel, source.WeekDay, source.ShortWeekDay,
-         source.WeekDayVN, source.Month, source.ShortMonth, source.MonthNumber, source.MonthLabel, source.MonthVN,
+         source.WeekDayVN, source.Month, source.ShortMonth, source.MonthNumber, source.MonthLabel, source.[MonthID], source.MonthVN,
          source.QuarterNumber, source.QuarterLabel, source.YearNumber, source.YearLabel, source.ISOWeekNumber,
          source.LunarDate, source.LunarDay, source.LunarMonth, source.LunarYear, source.LunarIsLeapMonth,
          source.LunarIsLeapYear);
