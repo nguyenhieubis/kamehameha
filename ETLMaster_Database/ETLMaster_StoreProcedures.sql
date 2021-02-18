@@ -439,7 +439,8 @@ BEGIN
         extract_rows = @extract_rows_file,
         before_import_rows = @before_import_rows_file,
         import_rows = @import_rows_file,
-        after_import_rows = @after_import_rows_file
+        after_import_rows = @after_import_rows_file,
+		modified_datetime = GETDATE()
     WHERE filelog_id = @filelog_id;
 END;
 GO
@@ -463,7 +464,8 @@ BEGIN
         extract_rows = @extract_rows,
         before_import_rows = @before_import_rows,
         import_rows = @import_rows,
-        after_import_rows = @after_import_rows
+        after_import_rows = @after_import_rows,
+		modified_datetime = GETDATE()
     WHERE log_id = @log_id;
 END;
 GO
@@ -477,7 +479,8 @@ BEGIN
 
     UPDATE dbo.etl_watermark
     SET watermark_value = @new_watermark_value,
-        last_watermark_value = watermark_value
+        last_watermark_value = watermark_value,
+		modified_datetime = GETDATE()
     WHERE watermark_id = @watermark_id;
 END;
 GO
