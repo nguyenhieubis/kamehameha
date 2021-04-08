@@ -714,7 +714,7 @@ namespace kamehameha
                 long i = 0;
 
                 List<string> rowValues = new List<string>();
-                List<char> s_rows = new List<char>();
+                int special_char_number = 0;
                 string item_temp = "";
                 // begin while
                 while (!sr.EndOfStream)
@@ -730,27 +730,20 @@ namespace kamehameha
                         string item_trim = item.Trim();
                         if (item_trim.Length > 0)
                         {
-                            if (item_trim[0] == special_char)
-                            {
-                                s_rows.Add(special_char);
-                            }
-                            if (item_trim[item_trim.Length - 1] == special_char && item_trim.Length > 1)
-                            {
-                                s_rows.Add(special_char);
-                            }
+                            special_char_number = item_trim.Length - item_trim.Replace(special_char.ToString(), "").Length;
                         }
                         item_temp += item_trim.Replace(special_char.ToString(), "");
-                        item_temp += s_rows.Count() % 2 != 0 ? (flag == values.Count() - 1 ? "\n" : delimited.ToString()) : "";
-                        if (s_rows.Count() % 2 == 0)
+                        item_temp += special_char_number % 2 != 0 ? (flag == values.Count() - 1 ? "\n" : delimited.ToString()) : "";
+                        if (special_char_number % 2 == 0)
                         {
                             rowValues.Add(item_temp);
-                            s_rows.Clear();
+                            special_char_number = 0;
                             item_temp = "";
                         }
                         flag++;
                     }
 
-                    if (flag == values.Count() && s_rows.Count() % 2 != 0) continue;
+                    if (flag == values.Count() && special_char_number % 2 != 0) continue;
 
                     if (i >= skip_line_number)
                     {
