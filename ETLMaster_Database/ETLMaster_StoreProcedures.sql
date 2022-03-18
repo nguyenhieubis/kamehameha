@@ -1,4 +1,6 @@
-﻿/************************* etl_get_connection_etl_master **************************/
+﻿USE ETLMaster
+GO
+/************************* etl_get_connection_etl_master **************************/
 CREATE OR ALTER PROC dbo.etl_get_connection_etl_master @decryption_key NVARCHAR(255)
 AS
 BEGIN
@@ -105,11 +107,11 @@ BEGIN
            ISNULL(cs.connection_type, '') AS source_connection_type,
            ISNULL(cs.database_type, '') AS source_database_type,
            ISNULL(cs.driver, '') AS source_driver,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cs.[server], ''))) AS source_server,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cs.[database], ''))) AS source_database,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cs.[port], ''))) AS source_port,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cs.[user], ''))) AS source_user,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cs.[password], ''))) AS source_password,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cs.[server])), '') AS source_server,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cs.[database])), '') AS source_database,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cs.[port])), '') AS source_port,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cs.[user])), '') AS source_user,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cs.[password])), '') AS source_password,
            ISNULL(cs.input_directory, '') AS source_input_directory,
            ISNULL(cs.archive_directory, '') AS source_archive_directory,
            ISNULL(cs.part_sheet_name_or_delimited, '') AS source_part_sheet_name_or_delimited,
@@ -123,11 +125,11 @@ BEGIN
            ISNULL(cd.connection_type, '') AS destination_connection_type,
            ISNULL(cd.database_type, '') AS destination_database_type,
            ISNULL(cd.driver, '') AS destination_driver,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cd.[server], ''))) AS destination_server,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cd.[database], ''))) AS destination_database,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cd.[port], ''))) AS destination_port,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cd.[user], ''))) AS destination_user,
-           CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, ISNULL(cd.[password], ''))) AS destination_password,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cd.[server])), '') AS destination_server,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cd.[database])), '') AS destination_database,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cd.[port])), '') AS destination_port,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cd.[user])), '') AS destination_user,
+           ISNULL(CONVERT(VARCHAR(255), DECRYPTBYPASSPHRASE(@decryption_key, cd.[password])), '') AS destination_password,
            ISNULL(cd.input_directory, '') AS destination_input_directory,
            ISNULL(cd.archive_directory, '') AS destination_archive_directory,
            ISNULL(cd.part_sheet_name_or_delimited, '') AS destination_part_sheet_name_or_delimited,

@@ -1,3 +1,11 @@
+USE master
+IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE name='ETLMaster' )
+BEGIN
+    CREATE DATABASE ETLMaster
+END;
+GO
+USE ETLMaster
+GO
 /************************* etl_connection **************************/
 DROP TABLE IF EXISTS [dbo].[etl_connection];
 GO

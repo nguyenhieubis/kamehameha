@@ -1,3 +1,5 @@
+USE ETLMaster
+GO
 /*********************************** dbo.v_etl_connection ***********************************/
 CREATE OR ALTER VIEW dbo.v_etl_connection
 AS

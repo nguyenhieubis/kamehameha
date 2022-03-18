@@ -2,7 +2,7 @@
 //using MongoDB.Driver;
 //using MySql.Data.MySqlClient;
 //using Npgsql;
-using Oracle.ManagedDataAccess.Client;
+//using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -30,8 +30,8 @@ namespace kamehameha
         private DateTime? ManualStartDateTime = new DateTime(2020, 01, 01);
         private DateTime NewWatermarkValue = DateTime.Now;
         private string DecryptionKey = "fb.com/dobuinguyenhieu";
-        private int CommandTimeoutSource = 3000;
-        private int CommandTimeoutDestination = 4000;
+        private int CommandTimeoutSource = 3600;
+        private int CommandTimeoutDestination = 3600;
         private int ParallelOption_MaxDegreeOfParallelism = Environment.ProcessorCount / 2;
         // Public property
         public int Batch_ID { get { return BatchID; } }
@@ -669,7 +669,7 @@ namespace kamehameha
                 string timelog_2 = (DateTime.Now.Hour * 100 + DateTime.Now.Minute).ToString();
                 timelog_2 = timelog_2.Length == 4 ? timelog_2 : "0" + timelog_2;
                 timelog += "_" + timelog_2;
-                archive_full_path_file = archive_full_path_file.Replace(file_name,"") + file_name.Substring(0, indexpath) + "¬" + timelog + file_name.Substring(indexpath);
+                archive_full_path_file = archive_full_path_file.Replace(file_name, "") + file_name.Substring(0, indexpath) + "¬" + timelog + file_name.Substring(indexpath);
             }
             // Check Directory and create if not exists
             if (!Directory.Exists(Path.GetDirectoryName(archive_full_path_file)))
@@ -886,7 +886,7 @@ namespace kamehameha
                 }
                 else
                 {
-                    dt_data = GetDataTable_DB_Oracle(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
+                    //dt_data = GetDataTable_DB_Oracle(connection_string, source_object, source_query, watermark_column, watermark_value, new_watermark_value);
                 }
             }
             else if (database_type.ToLower() == "mongodb")
@@ -1012,6 +1012,7 @@ namespace kamehameha
 
             return dt_data;
         }
+        
         private DataTable GetDataTable_DB_MySQL(string connection_string, string source_object, string source_query,
             string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
         {
@@ -1064,7 +1065,7 @@ namespace kamehameha
 
             return dt_data;
         }
-        */
+        
         private DataTable GetDataTable_DB_Oracle(string connection_string, string source_object, string source_query,
             string watermark_column, DateTime watermark_value, DateTime new_watermark_value)
         {
@@ -1091,10 +1092,11 @@ namespace kamehameha
 
             return dt_data;
         }
+        */
         #endregion
 
         #region Execution Functions
-        private void ETL_LoadDataViaSPUpsert(string connection_string, DataTable dt_data, string sp_upsert, string table_type, int log_id, 
+        private void ETL_LoadDataViaSPUpsert(string connection_string, DataTable dt_data, string sp_upsert, string table_type, int log_id,
             int? filelog_id = null, DateTime? new_watermark_value = null)
         {
             // Import data into destination
@@ -1389,8 +1391,8 @@ namespace kamehameha
                     ETL_ExecutionDataPipelines_Sequence(a_collection_type);
                 }
             });
-            
-            
+
+
         }
         private void ETL_ExecutionDataPipelines_Parallel(string a_collection_type)
         {
@@ -1464,7 +1466,7 @@ namespace kamehameha
             // Convert DataTable to List<DataRow>
             List<DataRow> rows = new List<DataRow>();
             foreach (DataRow item in dt_list_data_pipelines.Rows) { rows.Add(item); }
-            
+
             foreach (DataRow row in rows)
             {
                 // Create variable about information data pipelines
