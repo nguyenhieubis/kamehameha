@@ -15,14 +15,18 @@ namespace Console_DimDate
         {
             // Server=myServerAddress;Database=myDataBase;Trusted_Connection=True;
             // Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword;
-            string Connection_String = "Server=datatyksql.database.windows.net;Database=AdventureWorksDW;User Id=Datatyk;Password=P@ssword123;";
+            string server = "learnsever.database.windows.net";
+            string database = "AdventureWorks2012";
+            string user = "learnadmin";
+            string password = "Datatyk@2021";
+            string Connection_String = $"Server={server};Database={database};User Id={user};Password={password};";
 
             SqlConnection conn = new SqlConnection(Connection_String);
             conn.Open();
 
             // Create data DimDate
-            int start_year = 2010;
-            int end_year = 2049;
+            int start_year = 2020;
+            int end_year = 2050;
             for (int i = start_year; i <= end_year; i++)
             {
                 SqlCommand cmd = new SqlCommand();
