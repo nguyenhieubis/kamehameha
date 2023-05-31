@@ -25,8 +25,8 @@ namespace Console_DimDate
             conn.Open();
 
             // Create data DimDate
-            int start_year = 2020;
-            int end_year = 2050;
+            int start_year = 2017;
+            int end_year = 2025;
             for (int i = start_year; i <= end_year; i++)
             {
                 SqlCommand cmd = new SqlCommand();
